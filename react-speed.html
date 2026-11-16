@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반응속도 테스트 - 롤하고 싶은 진영의 오락실</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pixel Font (Press Start 2P) & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Noto+Sans+KR:wght@400;700;900&amp;display=swap" rel="stylesheet">
+    <style>
+        /* 기존 오락실 배경 및 기본 스타일 유지 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f051d;
+            color: #ffffff;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.15) 0%, transparent 80%),
+                linear-gradient(to bottom, #090314, #170a2c);
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        .font-pixel {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .pixel-btn {
+            box-shadow: inset -4px -4px 0px 0px #00000040, inset 4px 4px 0px 0px #ffffff40;
+            transition: transform 0.1s ease, filter 0.1s ease;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(4px);
+            box-shadow: inset -2px -2px 0px 0px #00000040, inset 2px 2px 0px 0px #ffffff40;
+        }
+
+        /* 네온 텍스트 효과 */
+        .neon-text-pink {
+            text-shadow: 0 0 5px #ff007f, 0 0 10px #ff007f, 0 0 20px #ff007f;
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+        }
+
+        /* Scanline 효과 (오락실 브라운관 느낌) */
+        .scanline {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.3)
+            );
+            background-size: 100% 4px;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .pixel-blink {
+            animation: blink 1s infinite;
+        }
+
+        /* 반응속도 게임 영역 상태별 스타일 */
+        .game-idle {
+            background-color: #1e1b4b;
+            border-color: #6366f1;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        .game-waiting {
+            background-color: #7f1d1d;
+            border-color: #f43f5e;
+            box-shadow: 0 0 25px rgba(244, 63, 94, 0.6);
+        }
+        .game-ready {
+            background-color: #064e3b;
+            border-color: #10b981;
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.8);
+        }
+        .game-early {
+            background-color: #78350f;
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+    </style>
+<style data-studio="css">
+:root{--st-accent:#e2557a}
+.st-nav{position:sticky;top:0;z-index:50;width:100%;box-sizing:border-box;background:#fff;background:rgba(255,255,255,.93);backdrop-filter:blur(6px);border-bottom:1px solid rgba(0,0,0,.08)}
+.st-nav-in{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:10px 12px;max-width:960px;margin:0 auto}
+.st-nav-a{display:inline-block;padding:8px 14px;border-radius:999px;text-decoration:none;color:#333;font-weight:700;font-size:15px;line-height:1.2}
+.st-nav-a:hover{background:rgba(0,0,0,.06)}
+.st-nav-a.is-on{background:var(--st-accent);color:#fff}
+.st-sec{box-sizing:border-box;width:100%;max-width:960px;margin:24px auto;padding:20px}
+.st-h{font-size:1.6rem;font-weight:800;line-height:1.3;margin:0 0 12px}
+.st-p{font-size:1rem;line-height:1.75;margin:0 0 12px}
+.st-btn{display:inline-block;padding:12px 22px;border-radius:12px;background:var(--st-accent);color:#fff!important;text-decoration:none;font-weight:700;font-size:1rem;line-height:1.2;border:0;cursor:pointer;margin:4px}
+.st-btn:hover{filter:brightness(1.08)}
+.st-img{margin:16px auto;text-align:center}
+.st-img img{display:inline-block;width:100%;max-width:100%;height:auto;border-radius:12px}
+.st-hero{text-align:center;padding:48px 20px;border-radius:20px;background:#f6f6f6;background:color-mix(in srgb,var(--st-accent) 12%,#fff)}
+.st-hero .st-h{font-size:2rem}
+.st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.st-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.05);text-align:left}
+.st-ico{font-size:2rem;line-height:1;margin:0 0 8px}
+.st-card .st-h{font-size:1.15rem;margin:0 0 6px}
+.st-card .st-p{margin:0;font-size:.95rem}
+.st-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px;align-items:center}
+@media(max-width:600px){.st-split{grid-template-columns:1fr}}
+.st-split img{display:block;width:100%;height:auto;border-radius:16px}
+.st-list{margin:0;padding-left:1.3em;line-height:1.9}
+.st-hr{border:0;border-top:2px dashed rgba(0,0,0,.15);margin:28px auto;max-width:960px}
+.st-foot{text-align:center;font-size:.875rem;opacity:.7;padding:24px 12px}
+.st-tab-bar{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid rgba(0,0,0,.08);margin-bottom:14px}
+.st-tab{border:0;background:none;padding:10px 14px;font:inherit;font-weight:700;color:inherit;opacity:.6;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.st-tab.is-on{opacity:1;color:var(--st-accent);border-bottom-color:var(--st-accent)}
+.st-acc{border:1px solid rgba(0,0,0,.1);border-radius:12px;margin:8px 0;background:#fff;overflow:hidden;text-align:left}
+.st-acc summary{cursor:pointer;padding:14px 44px 14px 16px;font-weight:700;list-style:none;position:relative}
+.st-acc summary::-webkit-details-marker{display:none}
+.st-acc summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:1.3em;color:var(--st-accent)}
+.st-acc[open] summary::after{content:"\2212"}
+.st-acc>.st-p{padding:0 16px 14px;margin:0}
+.st-pop{margin:12px 0;text-align:center}
+.st-modal{border:0;border-radius:18px;padding:24px;width:min(480px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:left;color:#222}
+.st-modal::backdrop{background:rgba(0,0,0,.45)}
+.st-slider{position:relative}
+.st-slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:16px}
+.st-slides::-webkit-scrollbar{display:none}
+.st-slide{flex:0 0 100%;scroll-snap-align:start;margin:0}
+.st-slide img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:16px}
+.st-slide figcaption{text-align:center;padding:8px;font-size:.95rem}
+.st-prev,.st-next{position:absolute;top:calc(50% - 40px);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:24px;line-height:1;cursor:pointer;color:#333}
+.st-prev{left:10px}.st-next{right:10px}
+.st-dots{display:flex;justify-content:center;gap:8px;margin-top:4px}
+.st-dots button{width:10px;height:10px;border-radius:50%;border:0;background:rgba(0,0,0,.2);padding:0;cursor:pointer}
+.st-dots button.is-on{background:var(--st-accent)}
+.st-quiz{text-align:center}
+.st-q{font-size:1.25rem;font-weight:800;margin:0 0 14px}
+.st-opts{display:grid;gap:8px;max-width:420px;margin:0 auto}
+.st-opt{padding:12px 16px;border-radius:12px;border:2px solid rgba(0,0,0,.12);background:#fff;font:inherit;font-weight:700;cursor:pointer;color:#222}
+.st-opt.is-ok{border-color:#2f9e5b;background:#e9f7ef}.st-opt.is-no{border-color:#d9475a;background:#fdecee}
+.st-qr{min-height:1.6em;font-weight:700;margin:12px 0 0}
+.st-ci{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid rgba(0,0,0,.08);border-radius:10px;margin:6px 0;background:#fff;cursor:pointer;text-align:left;color:#222}
+.st-ci input{width:20px;height:20px;flex:none;accent-color:var(--st-accent)}
+.st-bar{height:10px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:12px}
+.st-bar i{display:block;height:100%;width:0;background:var(--st-accent);transition:width .3s}
+.st-cnt{font-size:.9rem;opacity:.75;margin:6px 0 0}
+.st-dday,.st-timer{text-align:center;border-radius:20px;background:#f6f6f6;background:color-mix(in srgb,var(--st-accent) 10%,#fff)}
+.st-dlabel,.st-tlabel{margin:0;font-weight:700;opacity:.8}
+.st-dnum,.st-tnum{margin:4px 0 8px;font-size:3rem;font-weight:900;color:var(--st-accent);font-variant-numeric:tabular-nums;line-height:1.2}
+.st-tnum.is-done{animation:stblink 1s 3}@keyframes stblink{50%{opacity:.2}}
+.st-embed iframe{display:block;width:100%;aspect-ratio:16/9;height:auto;border:0;border-radius:14px}
+.st-embed[data-kind=map] iframe{aspect-ratio:4/3}
+.st-cols{display:grid;gap:16px}
+.st-c2{grid-template-columns:repeat(2,minmax(0,1fr))}.st-c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:600px){.st-c2,.st-c3{grid-template-columns:1fr}}
+.st-col{min-width:0}
+html.st-dark{filter:invert(1) hue-rotate(180deg);background:#fff}
+html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filter:invert(1) hue-rotate(180deg)}
+.st-editing .st-tab-panel{display:block!important;outline:2px dashed rgba(0,0,0,.18);outline-offset:4px;margin:12px 0}
+.st-editing .st-slides{flex-wrap:wrap;gap:10px;overflow:visible}
+.st-editing .st-prev,.st-editing .st-next{display:none}
+.st-editing dialog.st-modal{display:block;position:static;margin:12px auto;outline:2px dashed rgba(0,0,0,.25)}
+.st-editing .st-embed iframe{pointer-events:none}
+</style></head>
+<body class="min-h-screen relative overflow-x-hidden pb-12">
+<nav class="st-nav" data-studio="nav">
+  <div class="st-nav-in">
+    <a class="st-nav-a" href="index.html">홈</a>
+    <a class="st-nav-a" href="about.html">앞으로 할 간단한 테스트!</a>
+    <a class="st-nav-a is-on" href="react-speed.html">반응속도 테스트</a>
+  </div>
+</nav>
+
+
+    <!-- 화면 Scanline Overlay -->
+    <div class="pointer-events-none fixed inset-0 z-50 scanline opacity-40"></div>
+
+    <div class="max-w-3xl mx-auto px-4 py-8 relative z-10">
+
+        <!-- Header -->
+        <header class="text-center my-6">
+            <div class="inline-block bg-purple-900/60 border-4 border-cyan-400 p-4 mb-4 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                <div class="text-4xl sm:text-5xl mb-2">⚡ 🎯 🖱️</div>
+                <p class="font-pixel text-xs text-pink-400 mb-2">BONUS STAGE</p>
+                <h1 class="text-xl sm:text-3xl font-black text-cyan-300 tracking-wider neon-text-cyan leading-relaxed">
+                    피지컬 반응속도 테스트
+                </h1>
+            </div>
+            <p class="text-xs sm:text-sm text-gray-300 font-pixel mt-2">
+                <span class="text-yellow-400 pixel-blink">▶</span> TEST YOUR FLASH REACTION <span class="text-yellow-400 pixel-blink">◀</span>
+            </p>
+        </header>
+
+        <!-- SECTION 1: 반응속도 테스트 메인 게임 패드 -->
+        <section class="my-8">
+            <div id="reaction-pad" onmousedown="handlePadInteraction()" ontouchstart="handleTouchInteraction(event)" class="game-idle cursor-pointer w-full h-72 sm:h-80 border-4 rounded-2xl p-6 flex flex-col justify-center items-center text-center transition-colors duration-100">
+                
+                <div id="pad-icon" class="text-6xl mb-4">🕹️</div>
+                <h2 id="pad-title" class="text-xl sm:text-2xl font-bold text-white mb-2">
+                    화면을 클릭하여 테스트 시작!
+                </h2>
+                <p id="pad-desc" class="text-sm text-indigo-200">
+                    화면이 <span class="text-emerald-400 font-bold">초록색</span>으로 바뀌는 순간 최대한 빠르게 클릭하세요!
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 2: 티어 판정 및 기록 보드 -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 gap-6 my-8">
+            <!-- 최고 기록 & 평균 기록 -->
+            <div class="bg-slate-900/80 border-4 border-pink-500 p-5 rounded-2xl shadow-[0_0_15px_rgba(236,72,153,0.3)] flex flex-col justify-between">
+                <div>
+                    <h3 class="font-pixel text-xs sm:text-sm text-pink-400 mb-4 flex items-center gap-2">
+                        <span>🏆</span> HIGH SCORES
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-pink-500/40">
+                            <span class="text-sm text-gray-300">최고 기록 (BEST)</span>
+                            <span id="best-score" class="font-pixel text-base text-yellow-400">- ms</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-pink-500/40">
+                            <span class="text-sm text-gray-300">평균 기록 (AVG)</span>
+                            <span id="avg-score" class="font-pixel text-base text-cyan-300">- ms</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="resetRecords()" class="mt-4 w-full pixel-btn bg-slate-800 hover:bg-slate-700 text-gray-300 font-pixel text-xs py-2.5 px-4 rounded-xl border border-gray-600">
+                    🔄 기록 초기화
+                </button>
+            </div>
+
+            <!-- 롤 티어 환산기 -->
+            <div class="bg-slate-900/80 border-4 border-indigo-500 p-5 rounded-2xl shadow-[0_0_15px_rgba(99,102,241,0.3)] flex flex-col justify-center items-center text-center">
+                <h3 class="font-pixel text-xs sm:text-sm text-indigo-300 mb-3">
+                    ⚔️ LOL TIER ANALYSIS
+                </h3>
+                <div id="tier-badge" class="text-4xl my-2">❓</div>
+                <div id="tier-name" class="text-lg font-black text-white mb-1">측정 대기 중</div>
+                <p id="tier-comment" class="text-xs text-indigo-200 leading-relaxed">
+                    테스트를 완료하면 당신의 점멸 반응속도 티어를 알려드립니다!
+                </p>
+            </div>
+        </section>
+
+        <!-- 최근 5회 기록 로그 -->
+        <section class="bg-slate-900/80 border-4 border-purple-500 p-5 rounded-2xl shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+            <h3 class="font-pixel text-xs sm:text-sm text-purple-300 mb-3">
+                📜 RECENT ATTEMPTS (최근 5회)
+            </h3>
+            <div id="history-list" class="flex flex-wrap gap-2 min-h-[36px] items-center">
+                <span class="text-xs text-gray-500">아직 측정된 기록이 없습니다.</span>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center text-xs text-purple-400 font-pixel mt-12 pt-6 border-t border-purple-900">
+            <p>© 2026 PLAYER: 롤하고 싶은 진영. ALL RIGHTS RESERVED.</p>
+            <p class="mt-2 text-gray-500">PRESS SPACEBAR OR CLICK TO PLAY</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript 로직 -->
+    <script>
+        // 게임 상태 변수: 'idle' | 'waiting' | 'ready' | 'result' | 'early'
+        let gameState = 'idle';
+        let timerId = null;
+        let startTime = 0;
+        let records = [];
+
+        const pad = document.getElementById('reaction-pad');
+        const padIcon = document.getElementById('pad-icon');
+        const padTitle = document.getElementById('pad-title');
+        const padDesc = document.getElementById('pad-desc');
+
+        // 모바일 터치 중복 이벤트 방지용 핸들러
+        function handleTouchInteraction(e) {
+            e.preventDefault();
+            handlePadInteraction();
+        }
+
+        // 스페이스바로도 반응속도 측정 가능하도록 지원
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handlePadInteraction();
+            }
+        });
+
+        // 메인 게임 패드 상호작용 로직
+        function handlePadInteraction() {
+            if (gameState === 'idle' || gameState === 'result' || gameState === 'early') {
+                startWaiting();
+            } else if (gameState === 'waiting') {
+                triggerEarlyClick();
+            } else if (gameState === 'ready') {
+                finishReaction();
+            }
+        }
+
+        // 1단계: 빨간색 대기 화면 전환 및 랜덤 타이머 시작
+        function startWaiting() {
+            gameState = 'waiting';
+            updatePadStyle('game-waiting');
+            padIcon.innerText = '🛑';
+            padTitle.innerText = '초록색이 될 때까지 기다리세요...';
+            padDesc.innerText = '아직 누르면 안 됩니다! 말파이트 궁극기 장전 중...';
+
+            // 1.5초 ~ 4.5초 사이 무작위 시간 후 초록색 전환
+            const randomDelay = Math.floor(Math.random() * 3000) + 1500;
+            timerId = setTimeout(() => {
+                gameState = 'ready';
+                startTime = performance.now();
+                updatePadStyle('game-ready');
+                padIcon.innerText = '⚡';
+                padTitle.innerText = '지금 클릭하세요!! (FLASH!)';
+                padDesc.innerText = '지금 당장 누르세요!!';
+            }, randomDelay);
+        }
+
+        // 부정 출발(너무 일찍 누름) 처리
+        function triggerEarlyClick() {
+            clearTimeout(timerId);
+            gameState = 'early';
+            updatePadStyle('game-early');
+            padIcon.innerText = '😱';
+            padTitle.innerText = '너무 성급했습니다! (앞점멸 실패!)';
+            padDesc.innerText = '초록색으로 바뀐 뒤에 눌러야 합니다. 다시 시도하려면 클릭하세요.';
+        }
+
+        // 2단계: 반응속도 측정 완료
+        function finishReaction() {
+            const endTime = performance.now();
+            const reactionTime = Math.round(endTime - startTime);
+            gameState = 'result';
+
+            records.push(reactionTime);
+            updateStats(reactionTime);
+
+            updatePadStyle('game-idle');
+            padIcon.innerText = '🎯';
+            padTitle.innerHTML = `<span class="font-pixel text-yellow-300 text-2xl sm:text-3xl">${reactionTime} ms</span>`;
+            padDesc.innerText = '다시 측정하려면 화면을 클릭하세요!';
+        }
+
+        // 패드 테마 클래스 교체
+        function updatePadStyle(activeClass) {
+            pad.classList.remove('game-idle', 'game-waiting', 'game-ready', 'game-early');
+            pad.classList.add(activeClass);
+        }
+
+        // 기록 및 롤 티어 업데이트
+        function updateStats(latestTime) {
+            // 최고 기록 및 평균 계산
+            const best = Math.min(...records);
+            const avg = Math.round(records.reduce((a, b) => a + b, 0) / records.length);
+
+            document.getElementById('best-score').innerText = `${best} ms`;
+            document.getElementById('avg-score').innerText = `${avg} ms`;
+
+            // 최근 5회 기록 표시
+            const historyList = document.getElementById('history-list');
+            const recentFive = records.slice(-5).reverse();
+            historyList.innerHTML = recentFive.map((ms, idx) => `
+                <span class="px-3 py-1 rounded-lg font-pixel text-xs ${idx === 0 ? 'bg-pink-600 text-white border border-pink-300' : 'bg-slate-800 text-gray-300 border border-slate-600'}">
+                    ${ms}ms
+                </span>
+            `).join('');
+
+            // 롤 티어 판정 (방금 기록 기준)
+            const tierBadge = document.getElementById('tier-badge');
+            const tierName = document.getElementById('tier-name');
+            const tierComment = document.getElementById('tier-comment');
+
+            if (latestTime < 180) {
+                tierBadge.innerText = '👑';
+                tierName.innerText = '챌린저 (Faker급 피지컬)';
+                tierName.className = 'text-lg font-black text-cyan-300 mb-1';
+                tierComment.innerText = '말파이트 궁을 눈으로 보고 점멸로 피하는 인간. 진영을 뛰어넘었어요!';
+            } else if (latestTime < 220) {
+                tierBadge.innerText = '💎';
+                tierName.innerText = '다이아몬드 (원딜 캐리 가능)';
+                tierName.className = 'text-lg font-black text-blue-400 mb-1';
+                tierComment.innerText = '진영과 동급! 다이아 본캐급 피지컬! 한타 때 생존력이 우수해요!';
+            } else if (latestTime < 270) {
+                tierBadge.innerText = '🥇';
+                tierName.innerText = '골드 ~ 플래티넘 (평균 게이머)';
+                tierName.className = 'text-lg font-black text-yellow-400 mb-1';
+                tierComment.innerText = '준수한 반응속도입니다! 예측 점멸을 섞어 쓰면 티어 상승 가능!';
+            } else if (latestTime < 350) {
+                tierBadge.innerText = '🥈';
+                tierName.innerText = '실버 ~ 브론즈 (안전 제일)';
+                tierName.className = 'text-lg font-black text-gray-300 mb-1';
+                tierComment.innerText = '상대 스킬을 다 맞고 난 뒤에 점멸을 누르는 타입이시군요 😅';
+            } else {
+                tierBadge.innerText = '🪨';
+                tierName.innerText = '아이언 (가렌/유미 추천)';
+                tierName.className = 'text-lg font-black text-rose-400 mb-1';
+                tierComment.innerText = '피지컬보다는 뇌지컬과 유미 승차감을 추천해 드립니다!';
+            }
+        }
+
+        // 기록 초기화 함수
+        function resetRecords() {
+            records = [];
+            document.getElementById('best-score').innerText = '- ms';
+            document.getElementById('avg-score').innerText = '- ms';
+            document.getElementById('history-list').innerHTML = '<span class="text-xs text-gray-500">아직 측정된 기록이 없습니다.</span>';
+            document.getElementById('tier-badge').innerText = '❓';
+            document.getElementById('tier-name').innerText = '측정 대기 중';
+            document.getElementById('tier-name').className = 'text-lg font-black text-white mb-1';
+            document.getElementById('tier-comment').innerText = '테스트를 완료하면 당신의 점멸 반응속도 티어를 알려드립니다!';
+        }
+    </script>
+</body></html>
