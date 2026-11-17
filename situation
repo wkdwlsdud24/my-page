@@ -152,7 +152,7 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 </svg>
                 <div>
                     <h1 class="text-base sm:text-xl font-black tracking-wider text-hextech-gold uppercase">Rift Tactical Simulator</h1>
-                    <p class="text-xs text-slate-400">실시간 미니맵/전장 애니메이션 상황 판단 테스트</p>
+                    <p class="text-xs text-slate-400">실시간 미니맵/전장 애니메이션 상황 판단 테스트 (GitHub Pages Ready)</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -178,7 +178,7 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 </div>
                 <div class="space-y-3">
                     <span class="px-3 py-1 rounded-full bg-hextech-blueDark/40 border border-hextech-blue/50 text-hextech-blue text-xs font-bold tracking-widest uppercase">
-                        Interactive Battle Canvas • 8 Scenarios
+                        GitHub Pages Ready • Interactive Battle Canvas
                     </span>
                     <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">움직이는 협곡 전장 시뮬레이터</h2>
                     <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
@@ -620,7 +620,7 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 question: "체력이 30% 미만이고 골드가 쌓인 상태에서 30초 뒤 드래곤 한타를 대비하는 최선의 판단은?",
                 options: [
                     {
-                        text: "체력이 없어도 자리를 먼저 잡아야 하므로 드래곤 둥지 앞 부쉬에 숨어 30초를 기다린다.",
+                        text: "체력이 없지만 자리를 먼저 잡아야 하므로 드래곤 둥지 앞 부쉬에 숨어 30초를 기다린다.",
                         isCorrect: false,
                         outcomeType: "low_hp_wipe",
                         rationale: "부활해 풀피·새 아이템을 사 온 상대가 렌즈를 돌리며 진입하면 체력 30% 아군은 한 방에 전멸합니다."
@@ -1020,12 +1020,10 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
 
                 let px, py, playerHp = 1.0, isDead = false;
                 if (t < 0.35) {
-                    // 1단계: 레오나 쪽으로 일정 거리 걸어감
                     const wt = t / 0.35;
                     px = lerp(startX, walkEndX, wt);
                     py = lerp(startY, walkEndY, wt);
                 } else {
-                    // 2단계: 점멸(순간이동) 발동!
                     px = flashEndX;
                     py = flashEndY;
                     const afterFlashT = (t - 0.35) / 0.65;
@@ -1033,18 +1031,15 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                     isDead = afterFlashT > 0.72;
                 }
 
-                // 점멸 발동 순간 노란색 파티클 폭발 및 잔상 궤적 이펙트
                 if (t >= 0.35 && t < 0.65) {
                     const flashAnim = (t - 0.35) / 0.30;
                     ctx.save();
-                    // 점멸 출발지 잔상 링
                     ctx.strokeStyle = `rgba(250, 204, 21, ${1 - flashAnim})`;
                     ctx.lineWidth = 2.5;
                     ctx.beginPath();
                     ctx.arc(walkEndX, walkEndY, 12 + flashAnim * 18, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // 점멸 이동 경로 빛줄기
                     ctx.strokeStyle = `rgba(253, 224, 71, ${0.85 * (1 - flashAnim)})`;
                     ctx.lineWidth = 3;
                     ctx.setLineDash([4, 3]);
@@ -1054,7 +1049,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                     ctx.stroke();
                     ctx.setLineDash([]);
 
-                    // 도착지 점멸 섬광 폭발
                     ctx.fillStyle = `rgba(254, 240, 138, ${0.7 * (1 - flashAnim)})`;
                     ctx.beginPath();
                     ctx.arc(flashEndX, flashEndY, 16 + flashAnim * 26, 0, Math.PI * 2);
@@ -1062,7 +1056,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                     ctx.restore();
                 }
 
-                // 점멸 후 레오나/올라프에게 둘러싸여 포커싱당함
                 const leoX = lerp(w * 0.72, w * 0.66, t);
                 const leoY = lerp(h * 0.44, h * 0.46, t);
                 const olafX = lerp(w * 0.64, w * 0.58, t);
@@ -1084,7 +1077,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 const suppHp = Math.max(0, 1 - (t / 0.45));
                 const suppDead = t >= 0.45;
 
-                // 전반부(t < 0.45): 적들이 아군 서폿을 포위해 처치 -> 후반부(t >= 0.45): 바론 둥지 쪽 나의 위치로 몰려옴
                 let olafX, olafY, leoX, leoY, adcX, adcY;
                 if (t < 0.45) {
                     const p1 = t / 0.45;
@@ -1129,18 +1121,15 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                     playerHp = Math.max(0, 1 - fightT * 1.18);
                     isDead = fightT > 0.82;
 
-                    // 플레이어가 바론을 공격하는 화살표
                     if (!isDead) {
                         drawArrow(px, py, baronX, baronY + 8, '#fbbf24', false);
                     }
 
-                    // 바론의 보라색 산성 투사체 & 피격 파동 이펙트 (3연속 타격 연출)
                     const pulse = (fightT * 3) % 1;
                     const projX = lerp(baronX, px, pulse);
                     const projY = lerp(baronY, py, pulse);
 
                     ctx.save();
-                    // 보라색 산성 투사체
                     ctx.fillStyle = '#c084fc';
                     ctx.shadowColor = '#a855f7';
                     ctx.shadowBlur = 10;
@@ -1148,7 +1137,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                     ctx.arc(projX, projY, 6, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // 피격 시 바론 광역 데미지 링 및 데미지 텍스트
                     if (pulse > 0.72 && !isDead) {
                         ctx.strokeStyle = '#e879f9';
                         ctx.lineWidth = 2.5;
@@ -1178,7 +1166,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             drawMapTerrain(w, h, 'jungle_ward');
 
             if (animMode === 'scenario') {
-                // 일반 투명 와드만 박혀 있음 -> 이블린이 위장 상태로 접근
                 drawWardVision(w * 0.45, h * 0.35, 55, false);
                 const ix = lerp(w * 0.22, w * 0.58, t);
                 const iy = lerp(h * 0.75, h * 0.42, t);
@@ -1187,21 +1174,18 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.20, h * 0.25, '아군 본대', 'ally');
                 drawBannerText(w, h, '일반 와드는 이블린의 은신을 감지하지 못합니다!', '#38bdf8');
             } else if (currentOutcomeType === 'ward_detect') {
-                // 정답: 제어 와드 설치 & 아군 쪽으로 합류
                 drawWardVision(w * 0.45, h * 0.48, 75, true);
                 const ix = lerp(w * 0.25, w * 0.42, t);
                 const iy = lerp(h * 0.72, h * 0.54, t);
                 const px = lerp(w * 0.68, w * 0.32, t);
                 const py = lerp(h * 0.32, h * 0.26, t);
 
-                // 감지 범위 진입 시 은신 해제
                 const detected = t > 0.45;
                 drawUnit(ix, iy, detected ? '이블린 (발각!)' : '이블린', 'enemy', { stealth: !detected });
                 drawUnit(px, py, '나 (합류)', 'player');
                 drawUnit(w * 0.22, h * 0.25, '아군 본대', 'ally');
                 drawBannerText(w, h, '성공! 제어 와드로 이블린을 감지하고 안전하게 합류했습니다!', '#34d399');
             } else {
-                // 오답: 은신 암살당함
                 const ix = lerp(w * 0.35, w * 0.66, t);
                 const iy = lerp(h * 0.60, h * 0.34, t);
                 drawUnit(ix, iy, '이블린', 'enemy', { stealth: t < 0.6 });
@@ -1215,17 +1199,14 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             drawMapTerrain(w, h, 'dragon_choke');
 
             if (animMode === 'scenario') {
-                // 아군 5명이 좁은 길목으로 뭉쳐 이동
                 const baseX = lerp(w * 0.16, w * 0.42, t);
                 drawUnit(baseX, h * 0.48, '나', 'player');
                 drawUnit(baseX - 18, h * 0.43, '아군1', 'ally');
                 drawUnit(baseX - 18, h * 0.53, '아군2', 'ally');
                 drawUnit(baseX + 16, h * 0.45, '아군3', 'ally');
-                // 부쉬 속 오공
                 drawUnit(w * 0.54, h * 0.48, '오공 (매복)', 'enemy', { stealth: true });
                 drawBannerText(w, h, '좁은 길목에 뭉치면 오공 광역 궁극기 각이 나옵니다!', '#38bdf8');
             } else if (currentOutcomeType === 'spread_win') {
-                // 정답: 진형 분산 & 부쉬 시야 체크
                 drawWardVision(w * 0.53, h * 0.48, 55, false);
                 drawUnit(lerp(w * 0.32, w * 0.35, t), h * 0.22, '나 (상단 분산)', 'player');
                 drawUnit(lerp(w * 0.32, w * 0.36, t), h * 0.76, '아군1 (하단 분산)', 'ally');
@@ -1233,13 +1214,11 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.54, h * 0.48, '오공 (시야 노출)', 'enemy');
                 drawBannerText(w, h, '성공! 진형을 넓게 분산시켜 광역 에어본 각을 봉쇄했습니다!', '#34d399');
             } else {
-                // 오답: 좁은 길목에서 5인 에어본 당함
                 drawUnit(w * 0.46, h * 0.48, '나', 'player', { dead: t > 0.7 });
                 drawUnit(w * 0.42, h * 0.44, '아군1', 'ally', { dead: t > 0.7 });
                 drawUnit(w * 0.42, h * 0.52, '아군2', 'ally', { dead: t > 0.7 });
                 drawUnit(w * 0.48, h * 0.48, '오공 (회전격!)', 'enemy');
 
-                // 광역 충격파 원
                 ctx.strokeStyle = '#f43f5e';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -1259,18 +1238,15 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.52, h * 0.32, '아군 미드 본대', 'ally');
                 drawUnit(w * 0.62, h * 0.35, '적 미드 본대', 'enemy');
 
-                // 쉔 궁극기 연결선 점멸
                 drawArrow(w * 0.76, h * 0.82, w * 0.62, h * 0.35, '#a855f7', true);
                 drawBannerText(w, h, '쉔이 궁극기로 미드 합류를 노리고 있습니다!', '#38bdf8');
             } else if (currentOutcomeType === 'split_trade_win') {
-                // 정답: 쉔 궁 차단 또는 억제기 포탑까지 고속 철거 교환
                 const px = lerp(w * 0.66, w * 0.82, t);
                 drawUnit(px, h * 0.82, '나 (포탑 철거!)', 'player');
                 drawUnit(w * 0.54, h * 0.32, '아군 (안전 거리 유지)', 'ally');
                 drawUnit(w * 0.64, h * 0.35, '쉔 (합류 이득 없음)', 'enemy');
                 drawBannerText(w, h, '성공! 쉔 합류를 예측해 손실 없이 바텀 2차 포탑을 파괴했습니다!', '#34d399');
             } else {
-                // 오답: 쉔 합류로 미드 대패
                 drawUnit(w * 0.66, h * 0.82, '나 (고립)', 'player');
                 drawUnit(w * 0.52, h * 0.32, '아군 본대', 'ally', { dead: t > 0.65 });
                 drawUnit(w * 0.56, h * 0.34, '쉔 + 적 본대', 'enemy');
@@ -1288,14 +1264,12 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.78, h * 0.50, '징크스 (프리딜)', 'enemy');
                 drawUnit(w * 0.34, h * 0.25, '나 (브루저)', 'player');
 
-                // 징크스 포격 투사체
                 const projX = lerp(w * 0.78, w * 0.45, (t * 2) % 1);
                 ctx.fillStyle = '#f43f5e';
                 ctx.beginPath(); ctx.arc(projX, h * 0.50, 5, 0, Math.PI * 2); ctx.fill();
 
                 drawBannerText(w, h, '징크스가 뒤에서 아무 방해 없이 프리딜을 넣고 있습니다!', '#38bdf8');
             } else if (currentOutcomeType === 'flank_win') {
-                // 정답: 상단 측면 통로로 우회해 징크스 제압
                 const px = lerp(w * 0.34, w * 0.74, t);
                 const py = t < 0.5 ? lerp(h * 0.25, h * 0.12, t * 2) : lerp(h * 0.12, h * 0.45, (t - 0.5) * 2);
                 drawUnit(w * 0.45, h * 0.50, '아군 앞라인', 'ally');
@@ -1304,7 +1278,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.78, h * 0.50, '징크스', 'enemy', { hp: Math.max(0, 1 - t * 1.1), dead: t > 0.8 });
                 drawBannerText(w, h, '성공! 측면 우회로 징크스의 프리딜을 차단하고 한타를 승리했습니다!', '#34d399');
             } else {
-                // 오답: 탱커만 치다가 징크스 프리딜에 전멸
                 drawUnit(w * 0.46, h * 0.45, '나 (탱커 타겟팅)', 'player', { dead: t > 0.75 });
                 drawUnit(w * 0.45, h * 0.55, '아군 앞라인', 'ally', { dead: t > 0.75 });
                 drawUnit(w * 0.54, h * 0.50, '적 탱커', 'enemy', { hp: 0.7 });
@@ -1319,7 +1292,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
 
             if (animMode === 'scenario') {
                 drawUnit(w * 0.46, h * 0.42, '나 (정글러)', 'player');
-                // 적 미드와 정글이 양쪽에서 포위해 들어오는 화살표
                 const mx = lerp(w * 0.25, w * 0.38, t);
                 const my = lerp(h * 0.14, h * 0.32, t);
                 const jx = lerp(w * 0.78, w * 0.62, t);
@@ -1331,7 +1303,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(jx, jy, '적 정글 (합류)', 'enemy');
                 drawBannerText(w, h, '경고! 적 미드·정글이 사라지며 포위망이 좁혀옵니다!', '#38bdf8');
             } else if (currentOutcomeType === 'retreat_safe') {
-                // 정답: 즉시 버프 포기하고 안전한 퇴로로 탈출
                 const px = lerp(w * 0.46, w * 0.24, t);
                 const py = lerp(h * 0.42, h * 0.84, t);
                 drawArrow(w * 0.46, h * 0.42, w * 0.24, h * 0.84, '#34d399', false);
@@ -1340,7 +1311,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.52, h * 0.46, '적 정글', 'enemy');
                 drawBannerText(w, h, '성공! 욕심을 버리고 즉시 철수해 포위망을 완벽히 벗어났습니다!', '#34d399');
             } else {
-                // 오답: 버프 치다가 1:2 포위당해 사망
                 drawUnit(w * 0.46, h * 0.42, '나 (무리한 사냥)', 'player', { hp: Math.max(0, 1 - t * 1.2), dead: t > 0.7 });
                 drawUnit(lerp(w * 0.35, w * 0.43, t), lerp(h * 0.25, h * 0.39, t), '적 미드', 'enemy');
                 drawUnit(lerp(w * 0.65, w * 0.50, t), lerp(h * 0.55, h * 0.44, t), '적 정글', 'enemy');
@@ -1353,14 +1323,12 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             drawMapTerrain(w, h, 'baron_push');
 
             if (animMode === 'scenario') {
-                // 바론 버프를 두른 아군 5명 대기
                 drawUnit(w * 0.30, h * 0.22, '탑(바론)', 'ally', { shield: true });
                 drawUnit(w * 0.30, h * 0.46, '나(바론)', 'player', { shield: true });
                 drawUnit(w * 0.30, h * 0.55, '아군2', 'ally', { shield: true });
                 drawUnit(w * 0.30, h * 0.78, '바텀(바론)', 'ally', { shield: true });
                 drawBannerText(w, h, '바론 버프 획득! 어떤 라인 구도로 압박할까요?', '#38bdf8');
             } else if (currentOutcomeType === 'split_baron_win') {
-                // 정답: 1-3-1 다중 라인 강화 미니언 동시 압박
                 const px = lerp(w * 0.32, w * 0.76, t);
                 drawUnit(px, h * 0.20, '탑 + 강화미니언', 'ally', { shield: true });
                 drawUnit(px, h * 0.50, '나 + 미드 본대', 'player', { shield: true });
@@ -1371,7 +1339,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(px + 22, h * 0.80, '', 'minion');
                 drawBannerText(w, h, '성공! 3라인 동시 압박으로 상대 수비를 분산시켜 포탑을 철거했습니다!', '#34d399');
             } else {
-                // 오답: 귀환하거나 미니언 없이 다이브해 버프 낭비
                 const px = currentOutcomeType === 'waste_baron' ? lerp(w * 0.30, w * 0.10, t) : lerp(w * 0.30, w * 0.82, t);
                 drawUnit(px, h * 0.50, '나 (버프 낭비)', 'player', { dead: currentOutcomeType === 'tower_dive_fail' && t > 0.7 });
                 drawBannerText(w, h, '실패! 바론 미니언 공성 이점을 살리지 못했습니다!', '#fb7185');
@@ -1383,13 +1350,11 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             drawMapTerrain(w, h, 'reset_dragon');
 
             if (animMode === 'scenario') {
-                // 체력 25% 상태인 아군 4명 미드 중앙에 위치
                 drawUnit(w * 0.48, h * 0.45, '나 (HP 25%)', 'player', { hp: 0.25 });
                 drawUnit(w * 0.44, h * 0.38, '아군1 (HP 20%)', 'ally', { hp: 0.20 });
                 drawUnit(w * 0.52, h * 0.52, '아군2 (HP 28%)', 'ally', { hp: 0.28 });
                 drawBannerText(w, h, '체력 30% 미만 & 1,600G 보유! 드래곤 30초 전 판단은?', '#38bdf8');
             } else if (currentOutcomeType === 'reset_and_win') {
-                // 정답: 우물 귀환 후 풀피·새 아이템으로 드래곤 합류
                 let px, py, hpVal;
                 if (t < 0.45) {
                     px = lerp(w * 0.48, w * 0.08, t / 0.45);
@@ -1405,7 +1370,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
                 drawUnit(w * 0.82, h * 0.65, '적군', 'enemy');
                 drawBannerText(w, h, '성공! 귀환 정비로 체력과 아이템을 채워 드래곤 한타를 완승했습니다!', '#34d399');
             } else {
-                // 오답: 딸피로 버티다가 부활한 적에게 전멸
                 drawUnit(w * 0.64, h * 0.68, '나 (HP 25%)', 'player', { hp: 0.25, dead: t > 0.65 });
                 drawUnit(w * 0.60, h * 0.60, '아군 (딸피)', 'ally', { hp: 0.20, dead: t > 0.65 });
                 drawUnit(lerp(w * 0.88, w * 0.66, t), lerp(h * 0.35, h * 0.66, t), '풀피 적군 진입', 'enemy');
@@ -1453,9 +1417,8 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
         let correctCount = 0;
         let hasAnswered = false;
         let missedNotes = [];
-        let currentShuffledOptions = []; // 현재 문제의 셔플된 선택지 목록 저장
+        let currentShuffledOptions = [];
 
-        // Fisher-Yates 셔플 유틸리티
         function shuffleArray(array) {
             const arr = [...array];
             for (let i = arr.length - 1; i > 0; i--) {
@@ -1498,7 +1461,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             const optionsList = document.getElementById('options-list');
             optionsList.innerHTML = '';
 
-            // 원본 선택지에 고유 originalId('A','B','C','D') 부여 후 매번 랜덤하게 셔플
             const indexedOptions = item.options.map((opt, idx) => ({
                 ...opt,
                 originalId: String.fromCharCode(65 + idx)
@@ -1522,7 +1484,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             document.getElementById('next-btn').textContent =
                 currentIdx === scenarios.length - 1 ? "최종 티어 결과 확인 →" : "다음 상황으로 →";
 
-            // 상황 애니메이션 시작
             startAnimationLoop('scenario', null);
         }
 
@@ -1584,7 +1545,6 @@ html.st-dark img,html.st-dark video,html.st-dark iframe,html.st-dark canvas{filt
             feedbackExplanation.textContent = chosen.rationale;
             feedbackBox.classList.remove('hidden');
 
-            // 선택한 결과 애니메이션 재생
             startAnimationLoop('outcome', chosen.outcomeType);
         }
 
