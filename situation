@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL 전장 애니메이션 상황별 대처 시뮬레이터</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        hextech: {
+                            dark: '#010A13',
+                            navy: '#091428',
+                            card: '#0A1428',
+                            gold: '#C8AA6E',
+                            goldLight: '#F0E6D2',
+                            goldDark: '#785A28',
+                            blue: '#0AC8B9',
+                            blueDark: '#005A82'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-hextech-dark text-hextech-goldLight min-h-screen flex flex-col justify-between antialiased selection:bg-hextech-gold selection:text-hextech-dark">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-hextech-navy border-b-2 border-hextech-goldDark/70 py-3.5 px-4 sm:px-8 shadow-lg sticky top-0 z-20">
+        <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-hextech-gold shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
+                </svg>
+                <div>
+                    <h1 class="text-base sm:text-xl font-black tracking-wider text-hextech-gold uppercase">Rift Tactical Simulator</h1>
+                    <p class="text-xs text-slate-400">실시간 미니맵/전장 애니메이션 상황 판단 테스트</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="sound-toggle" onclick="toggleSound()" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-hextech-goldDark/60 text-xs font-semibold text-hextech-gold hover:bg-slate-800 transition flex items-center gap-1.5">
+                    <span id="sound-icon">🔊</span>
+                    <span id="sound-text">효과음 켜짐</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 영역 -->
+    <main class="flex-grow flex items-center justify-center p-3 sm:p-6">
+        <div class="w-full max-w-4xl">
+
+            <!-- 1. 시작 화면 -->
+            <section id="start-screen" class="bg-hextech-navy/95 border-2 border-hextech-goldDark rounded-2xl p-6 sm:p-10 shadow-2xl text-center space-y-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-hextech-dark border-2 border-hextech-gold text-hextech-gold shadow-inner">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="space-y-3">
+                    <span class="px-3 py-1 rounded-full bg-hextech-blueDark/40 border border-hextech-blue/50 text-hextech-blue text-xs font-bold tracking-widest uppercase">
+                        Interactive Battle Canvas • 8 Scenarios
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">움직이는 협곡 전장 시뮬레이터</h2>
+                    <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+                        실시간으로 움직이는 미니맵 전장 애니메이션을 보고 최선의 판단을 내리세요!<br>
+                        선택에 따라 <strong class="text-hextech-gold">카이팅 성공, 광역기 회피, 암살당함, 포탑 철거</strong> 등 실제 결과 애니메이션이 즉시 재생됩니다.
+                    </p>
+                </div>
+
+                <!-- 범례 안내 -->
+                <div class="flex flex-wrap justify-center gap-4 text-xs text-slate-300 bg-hextech-dark/90 border border-slate-800 rounded-xl p-3 max-w-lg mx-auto">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-400 inline-block"></span> 아군 챔피언</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400 ring-2 ring-white inline-block"></span> 나 (플레이어)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> 적군 챔피언</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> 오브젝트</span>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="startSimulator()" class="w-full sm:w-auto px-10 py-4 rounded-xl bg-gradient-to-r from-hextech-goldDark via-hextech-gold to-hextech-goldDark text-hextech-dark font-black text-base sm:text-lg tracking-wider uppercase shadow-lg hover:brightness-110 active:scale-[0.99] transition">
+                        전장 시뮬레이션 시작
+                    </button>
+                </div>
+            </section>
+
+            <!-- 2. 퀴즈 & 실시간 캔버스 시뮬레이션 화면 -->
+            <section id="quiz-screen" class="hidden bg-hextech-navy/95 border-2 border-hextech-goldDark rounded-2xl p-4 sm:p-7 shadow-2xl space-y-5">
+                
+                <!-- 상단 진행도 바 -->
+                <div class="space-y-2">
+                    <div class="flex flex-wrap justify-between items-center text-xs sm:text-sm font-bold gap-2">
+                        <span id="question-counter" class="text-hextech-blue tracking-wide">상황 1 / 8</span>
+                        <span id="category-badge" class="px-2.5 py-0.5 rounded-md bg-slate-800 text-hextech-gold border border-hextech-goldDark/50">한타 포지셔닝</span>
+                        <span id="score-counter" class="text-hextech-gold">현재 점수: 0점</span>
+                    </div>
+                    <div class="w-full h-2 bg-hextech-dark rounded-full overflow-hidden border border-slate-800">
+                        <div id="progress-bar" class="h-full bg-gradient-to-r from-hextech-blueDark to-hextech-blue transition-all duration-300" style="width: 12.5%;"></div>
+                    </div>
+                </div>
+
+                <!-- 실시간 전장 애니메이션 캔버스 컨테이너 -->
+                <div class="relative rounded-xl overflow-hidden border-2 border-hextech-goldDark bg-[#06131c] shadow-inner">
+                    <!-- 상단 상태 오버레이 & 다시 재생 버튼 -->
+                    <div class="absolute top-2.5 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+                        <div id="sim-status-pill" class="px-3 py-1 rounded-full bg-hextech-dark/90 border border-hextech-blue/60 text-hextech-blue text-xs font-bold flex items-center gap-1.5 shadow">
+                            <span class="w-2 h-2 rounded-full bg-hextech-blue animate-ping"></span>
+                            <span id="sim-status-text">상황 재생 중...</span>
+                        </div>
+                        <button onclick="replayAnimation()" class="pointer-events-auto px-3 py-1.5 rounded-lg bg-hextech-dark/90 hover:bg-slate-800 border border-hextech-gold text-hextech-gold text-xs font-bold flex items-center gap-1 shadow transition active:scale-95">
+                            <span>🔄</span>
+                            <span>다시 재생</span>
+                        </button>
+                    </div>
+
+                    <!-- 반응형 캔버스 래퍼 -->
+                    <div id="canvas-wrapper" class="w-full h-64 sm:h-80">
+                        <canvas id="battle-canvas"></canvas>
+                    </div>
+
+                    <!-- 하단 범례 바 -->
+                    <div class="bg-hextech-dark/95 border-t border-slate-800 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-1 ring-white inline-block"></span> 나</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span> 아군</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> 적군</span>
+                        </div>
+                        <span id="role-tag" class="text-hextech-gold font-semibold">포지션: 원거리 딜러</span>
+                    </div>
+                </div>
+
+                <!-- 상황 설명 및 질문 -->
+                <div class="bg-hextech-dark/80 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <p id="scenario-desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed"></p>
+                    <h3 id="question-prompt" class="text-base sm:text-lg font-bold text-white leading-snug pt-1"></h3>
+                </div>
+
+                <!-- 4지선다 선택지 -->
+                <div id="options-list" class="grid grid-cols-1 gap-2.5"></div>
+
+                <!-- 결과 피드백 & 해설 -->
+                <div id="feedback-box" class="hidden rounded-xl p-4 sm:p-5 border transition-all duration-200 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span id="feedback-icon" class="text-xl"></span>
+                            <h4 id="feedback-heading" class="font-black text-base sm:text-lg"></h4>
+                        </div>
+                        <button onclick="replayOutcome()" class="px-2.5 py-1 rounded-md bg-hextech-dark/80 border border-slate-600 text-xs text-slate-200 hover:border-hextech-gold transition">
+                            🎬 결과 다시보기
+                        </button>
+                    </div>
+                    <p id="feedback-explanation" class="text-xs sm:text-sm text-slate-200 leading-relaxed"></p>
+                    <div class="pt-1 flex justify-end">
+                        <button id="next-btn" onclick="handleNextQuestion()" class="px-6 py-2.5 rounded-xl bg-hextech-gold text-hextech-dark font-bold text-sm hover:bg-hextech-goldLight transition shadow-md">
+                            다음 상황으로 →
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- 3. 최종 결과 화면 -->
+            <section id="result-screen" class="hidden bg-hextech-navy/95 border-2 border-hextech-gold rounded-2xl p-6 sm:p-10 shadow-2xl text-center space-y-6">
+                <div class="space-y-1">
+                    <p class="text-xs font-bold uppercase tracking-widest text-hextech-blue">SIMULATION COMPLETE</p>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white">최종 협곡 전술 평가</h2>
+                </div>
+
+                <div class="bg-hextech-dark border border-hextech-goldDark rounded-2xl p-6 max-w-md mx-auto space-y-3 shadow-inner">
+                    <div id="tier-badge" class="inline-block px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase border">
+                        CHALLENGER
+                    </div>
+                    <div class="text-4xl sm:text-5xl font-black text-hextech-gold tracking-tight" id="final-score-text">
+                        100 / 100점
+                    </div>
+                    <p id="correct-count-text" class="text-xs text-slate-400 font-medium">총 8문제 중 8문제 정답</p>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 sm:p-5 max-w-xl mx-auto text-left space-y-2">
+                    <h4 class="text-xs font-bold text-hextech-gold uppercase tracking-wider">코칭 피드백</h4>
+                    <p id="tier-feedback-text" class="text-sm text-slate-200 leading-relaxed"></p>
+                </div>
+
+                <!-- 오답 노트 -->
+                <div id="review-summary-container" class="max-w-xl mx-auto text-left space-y-2 hidden">
+                    <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider">오답 노트: 놓친 핵심 전술 포인트</h4>
+                    <ul id="missed-list" class="space-y-2 text-xs text-slate-300 bg-hextech-dark/70 p-4 rounded-xl border border-slate-800 max-h-52 overflow-y-auto"></ul>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="restartSimulator()" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-hextech-goldDark via-hextech-gold to-hextech-goldDark text-hextech-dark font-black text-sm sm:text-base tracking-wide uppercase hover:brightness-110 transition shadow-lg">
+                        처음부터 다시 시뮬레이션
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="py-3 px-4 text-center text-xs text-slate-500 border-t border-slate-900">
+        Rift Tactical Simulator • HTML5 Canvas Interactive Engine
+    </footer>
+
+    <script>
+        // ==========================================
+        // 1. Web Audio API 효과음 합성 모듈 (외부 URL 미사용)
+        // ==========================================
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playTone(freq, type, duration, delay = 0, gainVal = 0.12) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                gain.gain.setValueAtTime(gainVal, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + delay);
+                osc.stop(ctx.currentTime + delay + duration);
+            } catch (e) {}
+        }
+
+        function playSfx(event) {
+            if (!soundEnabled) return;
+            if (event === 'correct') {
+                playTone(523.25, 'triangle', 0.18, 0, 0.15);   // C5
+                playTone(659.25, 'triangle', 0.18, 0.08, 0.15); // E5
+                playTone(783.99, 'triangle', 0.30, 0.16, 0.18); // G5
+            } else if (event === 'wrong') {
+                playTone(220.00, 'sawtooth', 0.22, 0, 0.12);    // A3
+                playTone(185.00, 'sawtooth', 0.32, 0.14, 0.12); // F#3
+            } else if (event === 'replay') {
+                playTone(440.00, 'sine', 0.12, 0, 0.08);
+                playTone(587.33, 'sine', 0.15, 0.06, 0.08);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+            document.getElementById('sound-text').textContent = soundEnabled ? '효과음 켜짐' : '효과음 꺼짐';
+        }
+
+        // ==========================================
+        // 2. 8가지 핵심 전장 시나리오 데이터 (말파이트·리신 제외)
+        // ==========================================
+        const scenarios = [
+            {
+                id: 1,
+                category: "한타 포지셔닝",
+                role: "원거리 딜러 (징크스/애쉬)",
+                desc: "바론 둥지 앞 5:5 대치 상황! 상대 돌진 조합(올라프, 레오나, 잭스)이 일제히 이니시를 걸며 정면으로 파고듭니다.",
+                question: "돌진 조합이 정면으로 진입할 때, 원딜의 가장 이상적인 포지셔닝과 타겟팅은?",
+                options: [
+                    {
+                        text: "상대 탱커를 무시하고 점멸로 적진 한가운데 들어가 상대 원딜을 먼저 노린다.",
+                        isCorrect: false,
+                        outcomeType: "dive_fail",
+                        rationale: "원딜이 적진에 뛰어들면 상대 브루저들에게 순식간에 포위당해 아무 딜도 못 넣고 폭사합니다."
+                    },
+                    {
+                        text: "아군 서포터의 보호 사거리 내에서 뒤로 카이팅하며 가장 가까이 돌진해 오는 적 앞라인부터 점사한다.",
+                        isCorrect: true,
+                        outcomeType: "kite_win",
+                        rationale: "정답! 돌진 조합 상대로는 진형을 유지하며 뒤로 빠지는 카이팅 구도를 만들고, 들어오는 앞라인부터 녹여야 승리합니다."
+                    },
+                    {
+                        text: "교전이 끝날 때까지 바론 둥지 뒤쪽 벽 너머에 숨어서 아무것도 하지 않는다.",
+                        isCorrect: false,
+                        outcomeType: "hide_fail",
+                        rationale: "핵심 딜러가 딜 공백을 만들면 아군 앞라인이 먼저 무너져 한타를 일방적으로 패배합니다."
+                    },
+                    {
+                        text: "바론 둥지 안으로 들어가 바론을 먼저 치면서 상대가 바론 광역 딜을 맞도록 유도한다.",
+                        isCorrect: false,
+                        outcomeType: "baron_fail",
+                        rationale: "바론의 방어력 감소 디버프와 광역 피해를 동시에 맞아 한타가 즉시 붕괴됩니다."
+                    }
+                ]
+            },
+            {
+                id: 2,
+                category: "은신 대처 & 시야 장악",
+                role: "전 포지션 공통",
+                desc: "잘 큰 상대 은신 정글러 이블린이 미니맵에서 사라졌습니다. 일반 부쉬 와드만 박혀 있는 상태에서 미드·사이드 라인을 밀려 합니다.",
+                question: "은신 암살자 이블린의 연속 암살을 차단하기 위한 가장 효과적인 대처법은?",
+                options: [
+                    {
+                        text: "강가 부쉬에 일반 투명 와드만 2개 겹쳐서 박고 혼자 사이드 라인을 깊게 민다.",
+                        isCorrect: false,
+                        outcomeType: "ambush_fail",
+                        rationale: "일반 투명 와드는 이블린의 위장 상태를 감지하지 못하므로 부쉬 옆을 지나가도 전혀 보이지 않습니다."
+                    },
+                    {
+                        text: "제어 와드를 칼날부리·정글 핵심 통로에 배치해 은신을 감지하고, 1인 단독 푸쉬를 멈춰 아군과 합류한다.",
+                        isCorrect: true,
+                        outcomeType: "ward_detect",
+                        rationale: "정답! 제어 와드 반경 안에서는 위장 상태의 이블린이 드러나므로 핵심 동선에 제어 와드를 박고 아군과 뭉쳐야 암살을 막습니다."
+                    },
+                    {
+                        text: "이블린이 보일 때까지 모든 라인과 정글을 버리고 본진 쌍둥이 포탑 앞에만 서 있는다.",
+                        isCorrect: false,
+                        outcomeType: "passive_fail",
+                        rationale: "모든 오브젝트와 정글을 내주면 골드 격차가 벌어져 자연스럽게 패배합니다."
+                    },
+                    {
+                        text: "서포터 혼자서 어두운 상대 정글 깊숙이 들어가 와드를 지우며 이블린을 찾아다닌다.",
+                        isCorrect: false,
+                        outcomeType: "support_fail",
+                        rationale: "시야 없는 적 정글에 홀로 들어가면 이블린에게 확정 킬을 헌납합니다."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                category: "광역 궁극기 진형 분산",
+                role: "전 포지션 공통",
+                desc: "드래곤 한타 직전! 아군 5명이 레드 팀 칼날부리 옆 좁은 정글 길목에 뭉쳐서 이동 중이며, 벽 너머 부쉬에 상대 오공이 매복해 있습니다.",
+                question: "오공의 광역 에어본(회전격) 대박 각을 방지하기 위한 최선의 팀 움직임은?",
+                options: [
+                    {
+                        text: "5명이 좁은 길목에 한 몸처럼 뭉쳐서 빠른 속도로 드래곤 둥지까지 돌파한다.",
+                        isCorrect: false,
+                        outcomeType: "wukong_wombo",
+                        rationale: "좁은 길목에 5명이 뭉치면 오공의 광역 에어본에 전원 공중에 떠서 한타가 1초 만에 끝납니다."
+                    },
+                    {
+                        text: "좁은 길목 돌파를 멈추고 미드 라인과 정글 입구로 진형을 넓게 분산시키며, 부쉬에 와드/렌즈를 사용해 시야를 먼저 밝힌다.",
+                        isCorrect: true,
+                        outcomeType: "spread_win",
+                        rationale: "정답! 광역 CC 조합을 상대할 때는 아군 간 거리를 벌려 한 번에 다수가 휩쓸리지 않도록 진형을 분산해야 합니다."
+                    },
+                    {
+                        text: "원거리 딜러가 가장 앞장서서 부쉬 안을 직접 걸어 들어가며 몸으로 체크한다.",
+                        isCorrect: false,
+                        outcomeType: "adc_facecheck",
+                        rationale: "몸이 약한 원딜이 페이스체크를 하면 즉시 암살당해 한타가 성립하지 않습니다."
+                    },
+                    {
+                        text: "드래곤을 완전히 포기하고 탑 1차 포탑을 밀러 5명이 우르르 올라간다.",
+                        isCorrect: false,
+                        outcomeType: "giveup_fail",
+                        rationale: "드래곤 영혼 싸움 타이밍에 싸워보지도 않고 내주면 게임 주도권을 상실합니다."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                category: "글로벌 궁극기 & 스플릿",
+                role: "탑 스플릿 라이너 (피오라)",
+                desc: "당신은 바텀 2차 포탑을 스플릿 압박 중이고, 상대 쉔은 궁극기(단호한 의지)를 보유한 채 미드 4:4 대치 상황에 합류하려 합니다.",
+                question: "글로벌 궁극기를 가진 쉔을 상대할 때 올바른 스플릿 푸시 운영은?",
+                options: [
+                    {
+                        text: "쉔이 궁을 쓰든 말든 미니맵을 보지 않고 미니언도 없이 포탑만 계속 때린다.",
+                        isCorrect: false,
+                        outcomeType: "shen_ult_lose",
+                        rationale: "쉔의 합류로 미드 5:4 한타가 대패하면 바론까지 내주어 사이드 이득보다 훨씬 큰 손해를 봅니다."
+                    },
+                    {
+                        text: "미드 대치를 주시하며 쉔이 궁을 시전할 때 CC기로 끊거나, 합류를 막지 못했다면 텔레포트 맞합류 또는 억제기 포탑까지 고속 철거로 교환한다.",
+                        isCorrect: true,
+                        outcomeType: "split_trade_win",
+                        rationale: "정답! 글로벌 궁극기 챔피언 상대로는 시전 모션을 끊을 준비를 하거나, 즉각적인 맞합류·확실한 포탑 철거 이득으로 대가를 치르게 해야 합니다."
+                    },
+                    {
+                        text: "쉔의 궁극기가 무서우니 사이드 라인을 전혀 밀지 않고 항상 미드에만 서 있는다.",
+                        isCorrect: false,
+                        outcomeType: "no_split_fail",
+                        rationale: "스플릿 챔피언의 장점을 스스로 포기하면 한타 조합인 상대에게 유리한 구도만 만들어줍니다."
+                    },
+                    {
+                        text: "쉔이 미드로 궁극기를 타자마자 나도 귀환을 눌러 본진에서 쇼핑을 한다.",
+                        isCorrect: false,
+                        outcomeType: "recall_fail",
+                        rationale: "상대가 수적 우위로 한타를 여는 골든타임에 귀환하면 아군도 잃고 포탑도 못 미는 최악의 결과가 나옵니다."
+                    }
+                ]
+            },
+            {
+                id: 5,
+                category: "프리딜 차단 & 측면 우회",
+                role: "브루저 / 암살자",
+                desc: "미드 한타에서 양 팀 앞라인이 정면으로 부딪혔습니다. 이때 잘 큰 상대 원딜 징크스가 뒤쪽에서 아무 견제 없이 프리딜을 넣고 있습니다.",
+                question: "상대 핵심 원딜러의 프리딜 구도를 무너뜨리기 위한 가장 적절한 판단은?",
+                options: [
+                    {
+                        text: "체력이 많이 남은 상대 앞라인 탱커를 끝까지 쫓아가서 먼저 처치한다.",
+                        isCorrect: false,
+                        outcomeType: "frontline_trap",
+                        rationale: "단단한 탱커를 잡는 동안 뒤에서 프리딜을 넣은 징크스가 아군 전원을 정리합니다."
+                    },
+                    {
+                        text: "기동성을 살려 측면 정글 통로로 우회해 징크스에게 직접 진입하여 딜 로스를 유발하거나 처치한다.",
+                        isCorrect: true,
+                        outcomeType: "flank_win",
+                        rationale: "정답! 한타에서 상대 핵심 원딜이 프리딜을 넣게 두면 패배하므로, 측면 우회 각으로 딜링 환경을 무너뜨리는 것이 최우선입니다."
+                    },
+                    {
+                        text: "우리 팀 원딜 옆에 5명이 모두 붙어서 방어만 하며 한타가 끝나길 기다린다.",
+                        isCorrect: false,
+                        outcomeType: "turtle_fail",
+                        rationale: "상대 원딜을 아무도 견제하지 않으면 일방적인 포격에 아군 진형이 붕괴됩니다."
+                    },
+                    {
+                        text: "한타 도중 빠져나와 옆에 있는 칼날부리 캠프를 사냥해 체력을 채운다.",
+                        isCorrect: false,
+                        outcomeType: "farm_fail",
+                        rationale: "한타 중 무단 이탈은 팀 전체의 패배로 직결됩니다."
+                    }
+                ]
+            },
+            {
+                id: 6,
+                category: "카운터 정글 & 미아 판단",
+                role: "정글러",
+                desc: "상대 블루 버프를 카운터 정글링하던 중, 미니맵에서 상대 미드 라이너와 정글러가 동시에 라인에서 사라졌습니다(미아).",
+                question: "시야 없는 적 정글 깊숙한 곳에서 인접 라인의 적들이 사라졌을 때 취해야 할 판단은?",
+                options: [
+                    {
+                        text: "블루 버프 체력이 반 정도 남았으니 욕심을 내어 끝까지 사냥한 뒤 강타로 먹고 빠진다.",
+                        isCorrect: false,
+                        outcomeType: "collapse_death",
+                        rationale: "적 미드와 정글이 사라졌다면 이미 당신을 포위하러 오는 중이므로 욕심을 내다 샌드위치 포위를 당합니다."
+                    },
+                    {
+                        text: "즉시 버프 사냥을 중단하고 가장 안전한 퇴로(아군 라인 및 솔방울탄 방향)로 즉시 철수한다.",
+                        isCorrect: true,
+                        outcomeType: "retreat_safe",
+                        rationale: "정답! 카정의 핵심은 '먹고 살아나오는 것'입니다. 적 미아 콜이 뜨면 즉시 욕심을 버리고 빠져나와야 데스를 막습니다."
+                    },
+                    {
+                        text: "블루 옆 부쉬에 숨어서 상대 미드 라이너가 지나갈 때까지 기다렸다가 1:1 싸움을 건다.",
+                        isCorrect: false,
+                        outcomeType: "outnumbered_fail",
+                        rationale: "상대 정글러까지 함께 합류하는 상황이라 1:2 다구리를 당해 확정 데스로 이어집니다."
+                    },
+                    {
+                        text: "아군 미드에게 지원 핑을 연타하며 적 정글 한복판에서 2:2 교전을 강제한다.",
+                        isCorrect: false,
+                        outcomeType: "late_backup_fail",
+                        rationale: "상대가 먼저 움직인 상황에서는 적의 합류가 항상 빠르므로 불리한 교전이 열립니다."
+                    }
+                ]
+            },
+            {
+                id: 7,
+                category: "바론 버프 다중 라인 운영",
+                role: "전 포지션 공통",
+                desc: "바론을 처치해 아군 5명 전원이 바론 버프를 획득했습니다! 상대는 2명이 사망했고 3명이 수성 중이며, 상대 2차 포탑들이 남아 있습니다.",
+                question: "바론 버프의 미니언 강화 효과를 극대화하는 가장 이상적인 운영법은?",
+                options: [
+                    {
+                        text: "바론 버프를 받자마자 5명 전원이 귀환해 골드를 쓰고 정글 캠프를 정리한다.",
+                        isCorrect: false,
+                        outcomeType: "waste_baron",
+                        rationale: "정비가 급하지 않은데 귀환과 정글링으로 귀중한 바론 버프 지속 시간을 날려버리면 안 됩니다."
+                    },
+                    {
+                        text: "강화된 대포 미니언을 동반해 1-3-1 또는 1-4 스플릿 구도를 형성, 여러 라인의 포탑을 동시에 압박한다.",
+                        isCorrect: true,
+                        outcomeType: "split_baron_win",
+                        rationale: "정답! 바론 버프는 주변 미니언을 대폭 강화하므로 2~3개 라인에 동시에 미니언을 밀어 넣어 상대 수비 인원을 분산시켜야 합니다."
+                    },
+                    {
+                        text: "미니언 웨이브를 기다리지 않고 5명이 미드 2차 포탑 안으로 다이브해 적 3명을 먼저 잡는다.",
+                        isCorrect: false,
+                        outcomeType: "tower_dive_fail",
+                        rationale: "미니언 없는 무리한 포탑 다이브는 바론 버프를 허무하게 헌납하는 지름길입니다."
+                    },
+                    {
+                        text: "전원이 각자 흩어져 상대 정글 캠프만 다 빼먹은 뒤 버프가 끝날 때쯤 귀환한다.",
+                        isCorrect: false,
+                        outcomeType: "jungle_waste",
+                        rationale: "바론 버프는 포탑 철거용이지 정글링용이 아닙니다."
+                    }
+                ]
+            },
+            {
+                id: 8,
+                category: "교전 승리 후 귀환 정비",
+                role: "전 포지션 공통",
+                desc: "한타 승리 후 아군 4명이 생존했지만 모두 체력이 30% 미만이고 주머니에 1,600골드씩 쌓여 있습니다. 드래곤 생성까지는 30초 남았습니다.",
+                question: "체력이 30% 미만이고 골드가 쌓인 상태에서 30초 뒤 드래곤 한타를 대비하는 최선의 판단은?",
+                options: [
+                    {
+                        text: "체력이 없어도 자리를 먼저 잡아야 하므로 드래곤 둥지 앞 부쉬에 숨어 30초를 기다린다.",
+                        isCorrect: false,
+                        outcomeType: "low_hp_wipe",
+                        rationale: "부활해 풀피·새 아이템을 사 온 상대가 렌즈를 돌리며 진입하면 체력 30% 아군은 한 방에 전멸합니다."
+                    },
+                    {
+                        text: "미드 라인만 빠르게 밀어 넣은 뒤 즉시 귀환해 체력 회복 및 아이템을 구매하고, 젠 타이밍에 맞춰 정비된 상태로 재합류한다.",
+                        isCorrect: true,
+                        outcomeType: "reset_and_win",
+                        rationale: "정답! 교전 승리 후에는 라인 주도권만 챙긴 뒤 빠르게 귀환해 골드를 전투력으로 전환해야 다음 오브젝트 한타를 이길 수 있습니다."
+                    },
+                    {
+                        text: "집에 가지 않고 딸피 상태로 상대 억제기 포탑까지 무리하게 공성을 시도한다.",
+                        isCorrect: false,
+                        outcomeType: "overstay_wipe",
+                        rationale: "딸피 상태로 적 본진 근처까지 깊숙이 들어가면 부활한 적들에게 휩쓸려 드래곤과 바론을 모두 내줍니다."
+                    },
+                    {
+                        text: "체력 25% 남은 정글러 혼자 드래곤 시야를 잡게 두고 나머지 3명만 귀환한다.",
+                        isCorrect: false,
+                        outcomeType: "solo_jg_die",
+                        rationale: "정글러가 혼자 잘리면 강타 싸움 자체가 불가능해집니다."
+                    }
+                ]
+            }
+        ];
+
+        // ==========================================
+        // 3. HTML5 Canvas 전장 애니메이션 엔진
+        // ==========================================
+        const canvas = document.getElementById('battle-canvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+
+        let animFrameId = null;
+        let animStartTime = 0;
+        let animMode = 'scenario'; // 'scenario' (문제 상황) | 'outcome' (선택 결과)
+        let currentOutcomeType = null;
+        const LOOP_DURATION = 5500; // 5.5초 루프
+
+        function resizeCanvas() {
+            if (!wrapper || !canvas) return;
+            const dpr = window.devicePixelRatio || 1;
+            const rect = wrapper.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function lerp(a, b, t) {
+            const clamped = Math.max(0, Math.min(1, t));
+            return a + (b - a) * clamped;
+        }
+
+        function easeInOut(t) {
+            const c = Math.max(0, Math.min(1, t));
+            return c < 0.5 ? 2 * c * c : 1 - Math.pow(-2 * c + 2, 2) / 2;
+        }
+
+        // 협곡 지형(강, 벽, 부쉬, 포탑, 오브젝트) 배경 그리기
+        function drawMapTerrain(w, h, mapTheme) {
+            // 기본 어두운 협곡 바닥
+            ctx.fillStyle = '#071520';
+            ctx.fillRect(0, 0, w, h);
+
+            // 전술 그리드 라인
+            ctx.strokeStyle = 'rgba(200, 170, 110, 0.06)';
+            ctx.lineWidth = 1;
+            const step = 32;
+            for (let x = 0; x < w; x += step) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += step) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            if (mapTheme === 'baron_front') {
+                // 상단 바론 둥지 & 강가
+                ctx.fillStyle = 'rgba(10, 140, 170, 0.14)';
+                ctx.beginPath();
+                ctx.arc(w * 0.5, h * 0.18, h * 0.28, 0, Math.PI, false);
+                ctx.fill();
+
+                // 둥지 외벽
+                ctx.strokeStyle = '#1e3a4c';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.arc(w * 0.5, h * 0.16, h * 0.24, 0.15 * Math.PI, 0.85 * Math.PI, false);
+                ctx.stroke();
+
+                drawObjective(w * 0.5, h * 0.16, '바론', '#a855f7');
+            } else if (mapTheme === 'jungle_ward') {
+                // 정글 통로 벽과 부쉬
+                drawWall(w * 0.25, h * 0.22, w * 0.18, h * 0.18);
+                drawWall(w * 0.62, h * 0.55, w * 0.20, h * 0.22);
+                drawBush(w * 0.45, h * 0.35, 34);
+                drawBush(w * 0.32, h * 0.68, 30);
+            } else if (mapTheme === 'dragon_choke') {
+                // 드래곤 둥지 & 좁은 길목 벽
+                drawObjective(w * 0.78, h * 0.72, '드래곤', '#f97316');
+                drawWall(w * 0.42, h * 0.12, w * 0.16, h * 0.28);
+                drawWall(w * 0.42, h * 0.60, w * 0.16, h * 0.32);
+                drawBush(w * 0.52, h * 0.48, 26); // 오공 매복 부쉬
+            } else if (mapTheme === 'split_lanes') {
+                // 미드 라인 & 바텀 라인 구분
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+                ctx.lineWidth = 18;
+                // 미드 대각선
+                ctx.beginPath(); ctx.moveTo(w * 0.15, h * 0.15); ctx.lineTo(w * 0.85, h * 0.45); ctx.stroke();
+                // 바텀 하단선
+                ctx.beginPath(); ctx.moveTo(w * 0.15, h * 0.82); ctx.lineTo(w * 0.88, h * 0.82); ctx.stroke();
+
+                drawTurret(w * 0.84, h * 0.82, '#f43f5e', '적 2차');
+                drawTurret(w * 0.82, h * 0.43, '#f43f5e', '미드 2차');
+            } else if (mapTheme === 'mid_flank') {
+                // 미드 중앙 교전 & 측면 정글 통로
+                drawWall(w * 0.35, h * 0.15, w * 0.30, h * 0.16);
+                drawWall(w * 0.35, h * 0.68, w * 0.30, h * 0.16);
+                drawBush(w * 0.48, h * 0.34, 24);
+            } else if (mapTheme === 'counter_jg') {
+                // 적 블루 버프 캠프 지형
+                drawWall(w * 0.22, h * 0.20, w * 0.16, h * 0.45);
+                drawWall(w * 0.64, h * 0.15, w * 0.20, h * 0.25);
+                drawObjective(w * 0.46, h * 0.48, '블루', '#3b82f6');
+            } else if (mapTheme === 'baron_push') {
+                // 3라인 푸시 미니맵 뷰 (탑/미드/바텀)
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+                ctx.lineWidth = 14;
+                ctx.beginPath(); ctx.moveTo(w * 0.14, h * 0.20); ctx.lineTo(w * 0.84, h * 0.20); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(w * 0.14, h * 0.50); ctx.lineTo(w * 0.84, h * 0.50); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(w * 0.14, h * 0.80); ctx.lineTo(w * 0.84, h * 0.80); ctx.stroke();
+
+                drawTurret(w * 0.82, h * 0.20, '#f43f5e', '탑 2차');
+                drawTurret(w * 0.82, h * 0.50, '#f43f5e', '미드 2차');
+                drawTurret(w * 0.82, h * 0.80, '#f43f5e', '바텀 2차');
+            } else if (mapTheme === 'reset_dragon') {
+                // 미드 중앙 & 하단 드래곤 둥지 & 좌측 아군 본진
+                drawObjective(w * 0.72, h * 0.74, '드래곤 (30초)', '#f97316');
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+                ctx.fillRect(0, h * 0.55, w * 0.16, h * 0.45);
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 11px "Noto Sans KR"';
+                ctx.fillText('아군 우물', 12, h * 0.78);
+            }
+        }
+
+        function drawWall(x, y, w, h) {
+            ctx.fillStyle = '#112233';
+            ctx.strokeStyle = '#1e3a52';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, 10);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawBush(x, y, r) {
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.18)';
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawObjective(x, y, label, color) {
+            ctx.fillStyle = color + '33';
+            ctx.beginPath();
+            ctx.arc(x, y, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 11px "Noto Sans KR"';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, y + 25);
+        }
+
+        function drawTurret(x, y, color, label) {
+            ctx.fillStyle = color;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.rect(x - 9, y - 9, 18, 18);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '10px "Noto Sans KR"';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, y + 21);
+        }
+
+        // 챔피언 유닛 렌더링
+        function drawUnit(x, y, label, type, options = {}) {
+            const { hp = 1, stealth = false, dead = false, shield = false } = options;
+            ctx.save();
+            if (stealth) ctx.globalAlpha = 0.35;
+            if (dead) ctx.globalAlpha = 0.25;
+
+            let fill = '#38bdf8'; // ally
+            let ring = '#0284c7';
+            let radius = 13;
+
+            if (type === 'player') {
+                fill = '#fbbf24';
+                ring = '#ffffff';
+                radius = 15;
+            } else if (type === 'enemy') {
+                fill = '#f43f5e';
+                ring = '#9f1239';
+            } else if (type === 'minion') {
+                fill = '#2dd4bf';
+                ring = '#0f766e';
+                radius = 7;
+            }
+
+            // 그림자/발광
+            ctx.beginPath();
+            ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
+            ctx.fillStyle = type === 'player' ? 'rgba(251, 191, 36, 0.28)' : 'rgba(0,0,0,0.4)';
+            ctx.fill();
+
+            // 본체 원
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.lineWidth = type === 'player' ? 2.5 : 1.8;
+            ctx.strokeStyle = ring;
+            ctx.stroke();
+
+            if (shield) {
+                ctx.beginPath();
+                ctx.arc(x, y, radius + 6, 0, Math.PI * 2);
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 이름 라벨
+            if (label) {
+                ctx.fillStyle = dead ? '#94a3b8' : '#ffffff';
+                ctx.font = type === 'player' ? 'bold 11px "Noto Sans KR"' : '600 10px "Noto Sans KR"';
+                ctx.textAlign = 'center';
+                ctx.fillText(dead ? `${label}(사망)` : label, x, y - radius - 6);
+            }
+
+            // 체력 바
+            if (hp < 1 && !dead && type !== 'minion') {
+                const bw = 26;
+                const bh = 4;
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(x - bw / 2, y + radius + 4, bw, bh);
+                ctx.fillStyle = hp > 0.4 ? '#22c55e' : '#ef4444';
+                ctx.fillRect(x - bw / 2, y + radius + 4, bw * hp, bh);
+            }
+
+            ctx.restore();
+        }
+
+        // 투사체 / 스킬 이펙트 / 화살표 그리기
+        function drawArrow(x1, y1, x2, y2, color = '#fbbf24', dashed = false) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2.2;
+            if (dashed) ctx.setLineDash([5, 4]);
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const headLen = 8;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawWardVision(x, y, r, isPink) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = isPink ? 'rgba(236, 72, 153, 0.14)' : 'rgba(250, 204, 21, 0.12)';
+            ctx.fill();
+            ctx.strokeStyle = isPink ? 'rgba(236, 72, 153, 0.65)' : 'rgba(250, 204, 21, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+
+            // 와드 아이콘
+            ctx.setLineDash([]);
+            ctx.fillStyle = isPink ? '#ec4899' : '#facc15';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawBannerText(w, h, text, color = '#fbbf24') {
+            ctx.save();
+            ctx.fillStyle = 'rgba(1, 10, 19, 0.82)';
+            ctx.roundRect(w * 0.5 - 150, h - 42, 300, 28, 8);
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 12px "Noto Sans KR"';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, w * 0.5, h - 24);
+            ctx.restore();
+        }
+
+        // ==========================================
+        // 4. 각 시나리오별 프레임 렌더러 (상황 vs 결과)
+        // ==========================================
+        function renderFrame(timestamp) {
+            if (!animStartTime) animStartTime = timestamp;
+            const elapsed = (timestamp - animStartTime) % LOOP_DURATION;
+            const t = easeInOut(elapsed / LOOP_DURATION);
+
+            const rect = wrapper.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height;
+
+            const qId = scenarios[currentIdx].id;
+
+            if (qId === 1) renderScenario1(w, h, t);
+            else if (qId === 2) renderScenario2(w, h, t);
+            else if (qId === 3) renderScenario3(w, h, t);
+            else if (qId === 4) renderScenario4(w, h, t);
+            else if (qId === 5) renderScenario5(w, h, t);
+            else if (qId === 6) renderScenario6(w, h, t);
+            else if (qId === 7) renderScenario7(w, h, t);
+            else if (qId === 8) renderScenario8(w, h, t);
+
+            animFrameId = requestAnimationFrame(renderFrame);
+        }
+
+        // 상황 1: 바론 앞 돌진 조합 카이팅
+        function renderScenario1(w, h, t) {
+            drawMapTerrain(w, h, 'baron_front');
+
+            if (animMode === 'scenario') {
+                // 적 돌진 조합이 우상단에서 좌하단 아군 쪽으로 돌진
+                const ex1 = lerp(w * 0.72, w * 0.50, t);
+                const ey1 = lerp(h * 0.35, h * 0.52, t);
+                const ex2 = lerp(w * 0.78, w * 0.56, t);
+                const ey2 = lerp(h * 0.45, h * 0.58, t);
+
+                drawArrow(w * 0.72, h * 0.35, w * 0.48, h * 0.53, '#f43f5e', true);
+                drawUnit(ex1, ey1, '올라프', 'enemy');
+                drawUnit(ex2, ey2, '레오나', 'enemy');
+                drawUnit(w * 0.85, h * 0.32, '적 원딜', 'enemy');
+
+                // 아군 서포터 & 나(원딜)
+                drawUnit(w * 0.42, h * 0.60, '아군 서폿', 'ally');
+                drawUnit(w * 0.32, h * 0.70, '나 (원딜)', 'player');
+                drawBannerText(w, h, '적 돌진 조합이 정면으로 파고듭니다! 어떻게 대처할까요?', '#38bdf8');
+            } else if (currentOutcomeType === 'kite_win') {
+                // 정답(B): 뒤로 카이팅하며 앞라인 점사
+                const px = lerp(w * 0.32, w * 0.16, t);
+                const py = lerp(h * 0.70, h * 0.82, t);
+                const sx = lerp(w * 0.42, w * 0.28, t);
+                const sy = lerp(h * 0.60, h * 0.72, t);
+                const ex = lerp(w * 0.52, w * 0.38, t);
+                const ey = lerp(h * 0.52, h * 0.62, t);
+
+                drawArrow(px, py, ex, ey, '#fbbf24', false);
+                drawUnit(sx, sy, '아군 서폿', 'ally', { shield: true });
+                drawUnit(px, py, '나 (원딜)', 'player', { shield: true });
+                drawUnit(ex, ey, '올라프', 'enemy', { hp: Math.max(0.05, 1 - t * 0.95), dead: t > 0.85 });
+                drawUnit(w * 0.82, h * 0.34, '적 원딜', 'enemy');
+                drawBannerText(w, h, '성공! 서포터 보호 아래 카이팅으로 앞라인을 녹였습니다!', '#34d399');
+            } else if (currentOutcomeType === 'dive_fail') {
+                // 선택지 A: 레오나 쪽으로 일정 거리 걸어가다가 점멸(순간이동) 후 CC 연계에 폭사
+                const startX = w * 0.32, startY = h * 0.70;
+                const walkEndX = w * 0.43, walkEndY = h * 0.61;
+                const flashEndX = w * 0.62, flashEndY = h * 0.47;
+
+                let px, py, playerHp = 1.0, isDead = false;
+                if (t < 0.35) {
+                    // 1단계: 레오나 쪽으로 일정 거리 걸어감
+                    const wt = t / 0.35;
+                    px = lerp(startX, walkEndX, wt);
+                    py = lerp(startY, walkEndY, wt);
+                } else {
+                    // 2단계: 점멸(순간이동) 발동!
+                    px = flashEndX;
+                    py = flashEndY;
+                    const afterFlashT = (t - 0.35) / 0.65;
+                    playerHp = Math.max(0, 1 - afterFlashT * 1.35);
+                    isDead = afterFlashT > 0.72;
+                }
+
+                // 점멸 발동 순간 노란색 파티클 폭발 및 잔상 궤적 이펙트
+                if (t >= 0.35 && t < 0.65) {
+                    const flashAnim = (t - 0.35) / 0.30;
+                    ctx.save();
+                    // 점멸 출발지 잔상 링
+                    ctx.strokeStyle = `rgba(250, 204, 21, ${1 - flashAnim})`;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(walkEndX, walkEndY, 12 + flashAnim * 18, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // 점멸 이동 경로 빛줄기
+                    ctx.strokeStyle = `rgba(253, 224, 71, ${0.85 * (1 - flashAnim)})`;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([4, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(walkEndX, walkEndY);
+                    ctx.lineTo(flashEndX, flashEndY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // 도착지 점멸 섬광 폭발
+                    ctx.fillStyle = `rgba(254, 240, 138, ${0.7 * (1 - flashAnim)})`;
+                    ctx.beginPath();
+                    ctx.arc(flashEndX, flashEndY, 16 + flashAnim * 26, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 점멸 후 레오나/올라프에게 둘러싸여 포커싱당함
+                const leoX = lerp(w * 0.72, w * 0.66, t);
+                const leoY = lerp(h * 0.44, h * 0.46, t);
+                const olafX = lerp(w * 0.64, w * 0.58, t);
+                const olafY = lerp(h * 0.35, h * 0.42, t);
+
+                drawUnit(w * 0.40, h * 0.64, '아군 서폿', 'ally');
+                drawUnit(olafX, olafY, '올라프', 'enemy');
+                drawUnit(leoX, leoY, '레오나', 'enemy');
+                drawUnit(w * 0.83, h * 0.34, '적 원딜', 'enemy');
+                drawUnit(px, py, t >= 0.35 && t < 0.55 ? '나 (점멸!)' : '나 (원딜)', 'player', { hp: playerHp, dead: isDead });
+
+                drawBannerText(w, h, '실패! 레오나 쪽으로 앞점멸을 써서 적진 한복판에서 폭사했습니다!', '#fb7185');
+            } else if (currentOutcomeType === 'hide_fail') {
+                // 선택지 C: 바론 둥지 근처에서 좌우로 조금씩 움직이는 동안 적들이 아군 서폿을 잡고 몰려옴
+                const swayX = w * 0.34 + Math.sin(t * Math.PI * 6) * 14;
+                const swayY = h * 0.24;
+
+                const suppX = w * 0.45, suppY = h * 0.60;
+                const suppHp = Math.max(0, 1 - (t / 0.45));
+                const suppDead = t >= 0.45;
+
+                // 전반부(t < 0.45): 적들이 아군 서폿을 포위해 처치 -> 후반부(t >= 0.45): 바론 둥지 쪽 나의 위치로 몰려옴
+                let olafX, olafY, leoX, leoY, adcX, adcY;
+                if (t < 0.45) {
+                    const p1 = t / 0.45;
+                    olafX = lerp(w * 0.66, suppX + 20, p1);
+                    olafY = lerp(h * 0.38, suppY - 12, p1);
+                    leoX = lerp(w * 0.72, suppX + 24, p1);
+                    leoY = lerp(h * 0.48, suppY + 10, p1);
+                    adcX = lerp(w * 0.82, suppX + 46, p1);
+                    adcY = lerp(h * 0.34, suppY, p1);
+                } else {
+                    const p2 = (t - 0.45) / 0.55;
+                    olafX = lerp(suppX + 20, swayX + 18, p2);
+                    olafY = lerp(suppY - 12, swayY + 14, p2);
+                    leoX = lerp(suppX + 24, swayX + 24, p2);
+                    leoY = lerp(suppY + 10, swayY + 20, p2);
+                    adcX = lerp(suppX + 46, swayX + 42, p2);
+                    adcY = lerp(suppY, swayY + 12, p2);
+                    drawArrow(suppX + 20, suppY - 12, swayX + 12, swayY + 10, '#f43f5e', true);
+                }
+
+                const playerHp = t > 0.72 ? Math.max(0, 1 - ((t - 0.72) / 0.28) * 1.1) : 1.0;
+                const playerDead = t > 0.92;
+
+                drawUnit(suppX, suppY, '아군 서폿', 'ally', { hp: suppHp, dead: suppDead });
+                drawUnit(swayX, swayY, '나 (눈치 보는 중)', 'player', { hp: playerHp, dead: playerDead });
+                drawUnit(olafX, olafY, '올라프', 'enemy');
+                drawUnit(leoX, leoY, '레오나', 'enemy');
+                drawUnit(adcX, adcY, '적 원딜', 'enemy');
+
+                drawBannerText(w, h, '실패! 딜 공백 사이 아군 서폿이 먼저 잡히고 적군이 몰려옵니다!', '#fb7185');
+            } else {
+                // 선택지 D: 바론 둥지 안으로 들어가 바론을 치다가 바론의 산성 공격에 데미지를 입고 사망
+                const baronX = w * 0.50, baronY = h * 0.16;
+                const px = t < 0.25 ? lerp(w * 0.32, w * 0.46, t / 0.25) : w * 0.46;
+                const py = t < 0.25 ? lerp(h * 0.70, h * 0.26, t / 0.25) : h * 0.26;
+
+                let playerHp = 1.0;
+                let isDead = false;
+
+                if (t >= 0.25) {
+                    const fightT = (t - 0.25) / 0.75;
+                    playerHp = Math.max(0, 1 - fightT * 1.18);
+                    isDead = fightT > 0.82;
+
+                    // 플레이어가 바론을 공격하는 화살표
+                    if (!isDead) {
+                        drawArrow(px, py, baronX, baronY + 8, '#fbbf24', false);
+                    }
+
+                    // 바론의 보라색 산성 투사체 & 피격 파동 이펙트 (3연속 타격 연출)
+                    const pulse = (fightT * 3) % 1;
+                    const projX = lerp(baronX, px, pulse);
+                    const projY = lerp(baronY, py, pulse);
+
+                    ctx.save();
+                    // 보라색 산성 투사체
+                    ctx.fillStyle = '#c084fc';
+                    ctx.shadowColor = '#a855f7';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(projX, projY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 피격 시 바론 광역 데미지 링 및 데미지 텍스트
+                    if (pulse > 0.72 && !isDead) {
+                        ctx.strokeStyle = '#e879f9';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.arc(px, py, 16 + (pulse - 0.72) * 45, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#f0abfc';
+                        ctx.font = 'bold 12px "Noto Sans KR"';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('-480 (바론 피해!)', px, py - 24 - (pulse - 0.72) * 20);
+                    }
+                    ctx.restore();
+                }
+
+                drawUnit(w * 0.42, h * 0.62, '아군 서폿', 'ally');
+                drawUnit(w * 0.66, h * 0.44, '올라프', 'enemy');
+                drawUnit(w * 0.74, h * 0.50, '레오나', 'enemy');
+                drawUnit(px, py, isDead ? '나 (바론에 처형)' : '나 (원딜)', 'player', { hp: playerHp, dead: isDead });
+
+                drawBannerText(w, h, '실패! 바론의 강력한 광역 산성 피해를 버티지 못하고 처형당했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 2: 이블린 은신 & 제어 와드
+        function renderScenario2(w, h, t) {
+            drawMapTerrain(w, h, 'jungle_ward');
+
+            if (animMode === 'scenario') {
+                // 일반 투명 와드만 박혀 있음 -> 이블린이 위장 상태로 접근
+                drawWardVision(w * 0.45, h * 0.35, 55, false);
+                const ix = lerp(w * 0.22, w * 0.58, t);
+                const iy = lerp(h * 0.75, h * 0.42, t);
+                drawUnit(ix, iy, '이블린 (은신)', 'enemy', { stealth: true });
+                drawUnit(w * 0.68, h * 0.32, '나 (라이너)', 'player');
+                drawUnit(w * 0.20, h * 0.25, '아군 본대', 'ally');
+                drawBannerText(w, h, '일반 와드는 이블린의 은신을 감지하지 못합니다!', '#38bdf8');
+            } else if (currentOutcomeType === 'ward_detect') {
+                // 정답: 제어 와드 설치 & 아군 쪽으로 합류
+                drawWardVision(w * 0.45, h * 0.48, 75, true);
+                const ix = lerp(w * 0.25, w * 0.42, t);
+                const iy = lerp(h * 0.72, h * 0.54, t);
+                const px = lerp(w * 0.68, w * 0.32, t);
+                const py = lerp(h * 0.32, h * 0.26, t);
+
+                // 감지 범위 진입 시 은신 해제
+                const detected = t > 0.45;
+                drawUnit(ix, iy, detected ? '이블린 (발각!)' : '이블린', 'enemy', { stealth: !detected });
+                drawUnit(px, py, '나 (합류)', 'player');
+                drawUnit(w * 0.22, h * 0.25, '아군 본대', 'ally');
+                drawBannerText(w, h, '성공! 제어 와드로 이블린을 감지하고 안전하게 합류했습니다!', '#34d399');
+            } else {
+                // 오답: 은신 암살당함
+                const ix = lerp(w * 0.35, w * 0.66, t);
+                const iy = lerp(h * 0.60, h * 0.34, t);
+                drawUnit(ix, iy, '이블린', 'enemy', { stealth: t < 0.6 });
+                drawUnit(w * 0.68, h * 0.32, '나 (고립)', 'player', { hp: Math.max(0, 1 - t * 1.1), dead: t > 0.75 });
+                drawBannerText(w, h, '실패! 시야 없는 단독 행동으로 이블린에게 암살당했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 3: 드래곤 좁은 길목 오공 광역기
+        function renderScenario3(w, h, t) {
+            drawMapTerrain(w, h, 'dragon_choke');
+
+            if (animMode === 'scenario') {
+                // 아군 5명이 좁은 길목으로 뭉쳐 이동
+                const baseX = lerp(w * 0.16, w * 0.42, t);
+                drawUnit(baseX, h * 0.48, '나', 'player');
+                drawUnit(baseX - 18, h * 0.43, '아군1', 'ally');
+                drawUnit(baseX - 18, h * 0.53, '아군2', 'ally');
+                drawUnit(baseX + 16, h * 0.45, '아군3', 'ally');
+                // 부쉬 속 오공
+                drawUnit(w * 0.54, h * 0.48, '오공 (매복)', 'enemy', { stealth: true });
+                drawBannerText(w, h, '좁은 길목에 뭉치면 오공 광역 궁극기 각이 나옵니다!', '#38bdf8');
+            } else if (currentOutcomeType === 'spread_win') {
+                // 정답: 진형 분산 & 부쉬 시야 체크
+                drawWardVision(w * 0.53, h * 0.48, 55, false);
+                drawUnit(lerp(w * 0.32, w * 0.35, t), h * 0.22, '나 (상단 분산)', 'player');
+                drawUnit(lerp(w * 0.32, w * 0.36, t), h * 0.76, '아군1 (하단 분산)', 'ally');
+                drawUnit(w * 0.24, h * 0.48, '아군2 (후방)', 'ally');
+                drawUnit(w * 0.54, h * 0.48, '오공 (시야 노출)', 'enemy');
+                drawBannerText(w, h, '성공! 진형을 넓게 분산시켜 광역 에어본 각을 봉쇄했습니다!', '#34d399');
+            } else {
+                // 오답: 좁은 길목에서 5인 에어본 당함
+                drawUnit(w * 0.46, h * 0.48, '나', 'player', { dead: t > 0.7 });
+                drawUnit(w * 0.42, h * 0.44, '아군1', 'ally', { dead: t > 0.7 });
+                drawUnit(w * 0.42, h * 0.52, '아군2', 'ally', { dead: t > 0.7 });
+                drawUnit(w * 0.48, h * 0.48, '오공 (회전격!)', 'enemy');
+
+                // 광역 충격파 원
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(w * 0.46, h * 0.48, 15 + t * 48, 0, Math.PI * 2);
+                ctx.stroke();
+                drawBannerText(w, h, '실패! 좁은 길목에 뭉쳐 오공 광역 궁극기에 전멸했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 4: 쉔 글로벌 궁극기 & 스플릿
+        function renderScenario4(w, h, t) {
+            drawMapTerrain(w, h, 'split_lanes');
+
+            if (animMode === 'scenario') {
+                drawUnit(w * 0.66, h * 0.82, '나 (피오라)', 'player');
+                drawUnit(w * 0.76, h * 0.82, '쉔 (궁 ON)', 'enemy');
+                drawUnit(w * 0.52, h * 0.32, '아군 미드 본대', 'ally');
+                drawUnit(w * 0.62, h * 0.35, '적 미드 본대', 'enemy');
+
+                // 쉔 궁극기 연결선 점멸
+                drawArrow(w * 0.76, h * 0.82, w * 0.62, h * 0.35, '#a855f7', true);
+                drawBannerText(w, h, '쉔이 궁극기로 미드 합류를 노리고 있습니다!', '#38bdf8');
+            } else if (currentOutcomeType === 'split_trade_win') {
+                // 정답: 쉔 궁 차단 또는 억제기 포탑까지 고속 철거 교환
+                const px = lerp(w * 0.66, w * 0.82, t);
+                drawUnit(px, h * 0.82, '나 (포탑 철거!)', 'player');
+                drawUnit(w * 0.54, h * 0.32, '아군 (안전 거리 유지)', 'ally');
+                drawUnit(w * 0.64, h * 0.35, '쉔 (합류 이득 없음)', 'enemy');
+                drawBannerText(w, h, '성공! 쉔 합류를 예측해 손실 없이 바텀 2차 포탑을 파괴했습니다!', '#34d399');
+            } else {
+                // 오답: 쉔 합류로 미드 대패
+                drawUnit(w * 0.66, h * 0.82, '나 (고립)', 'player');
+                drawUnit(w * 0.52, h * 0.32, '아군 본대', 'ally', { dead: t > 0.65 });
+                drawUnit(w * 0.56, h * 0.34, '쉔 + 적 본대', 'enemy');
+                drawBannerText(w, h, '실패! 쉔의 궁극기 합류에 아군 4명이 전멸당했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 5: 징크스 프리딜 차단 측면 우회
+        function renderScenario5(w, h, t) {
+            drawMapTerrain(w, h, 'mid_flank');
+
+            if (animMode === 'scenario') {
+                drawUnit(w * 0.45, h * 0.50, '아군 앞라인', 'ally');
+                drawUnit(w * 0.54, h * 0.50, '적 앞라인', 'enemy');
+                drawUnit(w * 0.78, h * 0.50, '징크스 (프리딜)', 'enemy');
+                drawUnit(w * 0.34, h * 0.25, '나 (브루저)', 'player');
+
+                // 징크스 포격 투사체
+                const projX = lerp(w * 0.78, w * 0.45, (t * 2) % 1);
+                ctx.fillStyle = '#f43f5e';
+                ctx.beginPath(); ctx.arc(projX, h * 0.50, 5, 0, Math.PI * 2); ctx.fill();
+
+                drawBannerText(w, h, '징크스가 뒤에서 아무 방해 없이 프리딜을 넣고 있습니다!', '#38bdf8');
+            } else if (currentOutcomeType === 'flank_win') {
+                // 정답: 상단 측면 통로로 우회해 징크스 제압
+                const px = lerp(w * 0.34, w * 0.74, t);
+                const py = t < 0.5 ? lerp(h * 0.25, h * 0.12, t * 2) : lerp(h * 0.12, h * 0.45, (t - 0.5) * 2);
+                drawUnit(w * 0.45, h * 0.50, '아군 앞라인', 'ally');
+                drawUnit(w * 0.54, h * 0.50, '적 앞라인', 'enemy');
+                drawUnit(px, py, '나 (측면 우회)', 'player');
+                drawUnit(w * 0.78, h * 0.50, '징크스', 'enemy', { hp: Math.max(0, 1 - t * 1.1), dead: t > 0.8 });
+                drawBannerText(w, h, '성공! 측면 우회로 징크스의 프리딜을 차단하고 한타를 승리했습니다!', '#34d399');
+            } else {
+                // 오답: 탱커만 치다가 징크스 프리딜에 전멸
+                drawUnit(w * 0.46, h * 0.45, '나 (탱커 타겟팅)', 'player', { dead: t > 0.75 });
+                drawUnit(w * 0.45, h * 0.55, '아군 앞라인', 'ally', { dead: t > 0.75 });
+                drawUnit(w * 0.54, h * 0.50, '적 탱커', 'enemy', { hp: 0.7 });
+                drawUnit(w * 0.78, h * 0.50, '징크스 (풀피)', 'enemy');
+                drawBannerText(w, h, '실패! 적 탱커를 치는 동안 징크스의 프리딜에 아군이 전멸했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 6: 카정 중 적 미아 시 철수
+        function renderScenario6(w, h, t) {
+            drawMapTerrain(w, h, 'counter_jg');
+
+            if (animMode === 'scenario') {
+                drawUnit(w * 0.46, h * 0.42, '나 (정글러)', 'player');
+                // 적 미드와 정글이 양쪽에서 포위해 들어오는 화살표
+                const mx = lerp(w * 0.25, w * 0.38, t);
+                const my = lerp(h * 0.14, h * 0.32, t);
+                const jx = lerp(w * 0.78, w * 0.62, t);
+                const jy = lerp(h * 0.65, h * 0.52, t);
+
+                drawArrow(w * 0.25, h * 0.14, w * 0.43, h * 0.38, '#f43f5e', true);
+                drawArrow(w * 0.78, h * 0.65, w * 0.52, h * 0.46, '#f43f5e', true);
+                drawUnit(mx, my, '적 미드 (미아)', 'enemy');
+                drawUnit(jx, jy, '적 정글 (합류)', 'enemy');
+                drawBannerText(w, h, '경고! 적 미드·정글이 사라지며 포위망이 좁혀옵니다!', '#38bdf8');
+            } else if (currentOutcomeType === 'retreat_safe') {
+                // 정답: 즉시 버프 포기하고 안전한 퇴로로 탈출
+                const px = lerp(w * 0.46, w * 0.24, t);
+                const py = lerp(h * 0.42, h * 0.84, t);
+                drawArrow(w * 0.46, h * 0.42, w * 0.24, h * 0.84, '#34d399', false);
+                drawUnit(px, py, '나 (즉시 철수)', 'player');
+                drawUnit(w * 0.44, h * 0.38, '적 미드', 'enemy');
+                drawUnit(w * 0.52, h * 0.46, '적 정글', 'enemy');
+                drawBannerText(w, h, '성공! 욕심을 버리고 즉시 철수해 포위망을 완벽히 벗어났습니다!', '#34d399');
+            } else {
+                // 오답: 버프 치다가 1:2 포위당해 사망
+                drawUnit(w * 0.46, h * 0.42, '나 (무리한 사냥)', 'player', { hp: Math.max(0, 1 - t * 1.2), dead: t > 0.7 });
+                drawUnit(lerp(w * 0.35, w * 0.43, t), lerp(h * 0.25, h * 0.39, t), '적 미드', 'enemy');
+                drawUnit(lerp(w * 0.65, w * 0.50, t), lerp(h * 0.55, h * 0.44, t), '적 정글', 'enemy');
+                drawBannerText(w, h, '실패! 버프 욕심을 내다가 적 미드·정글 합류에 포위당했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 7: 바론 버프 다중 라인 압박
+        function renderScenario7(w, h, t) {
+            drawMapTerrain(w, h, 'baron_push');
+
+            if (animMode === 'scenario') {
+                // 바론 버프를 두른 아군 5명 대기
+                drawUnit(w * 0.30, h * 0.22, '탑(바론)', 'ally', { shield: true });
+                drawUnit(w * 0.30, h * 0.46, '나(바론)', 'player', { shield: true });
+                drawUnit(w * 0.30, h * 0.55, '아군2', 'ally', { shield: true });
+                drawUnit(w * 0.30, h * 0.78, '바텀(바론)', 'ally', { shield: true });
+                drawBannerText(w, h, '바론 버프 획득! 어떤 라인 구도로 압박할까요?', '#38bdf8');
+            } else if (currentOutcomeType === 'split_baron_win') {
+                // 정답: 1-3-1 다중 라인 강화 미니언 동시 압박
+                const px = lerp(w * 0.32, w * 0.76, t);
+                drawUnit(px, h * 0.20, '탑 + 강화미니언', 'ally', { shield: true });
+                drawUnit(px, h * 0.50, '나 + 미드 본대', 'player', { shield: true });
+                drawUnit(px, h * 0.80, '바텀 + 강화미니언', 'ally', { shield: true });
+
+                drawUnit(px + 22, h * 0.20, '', 'minion');
+                drawUnit(px + 22, h * 0.50, '', 'minion');
+                drawUnit(px + 22, h * 0.80, '', 'minion');
+                drawBannerText(w, h, '성공! 3라인 동시 압박으로 상대 수비를 분산시켜 포탑을 철거했습니다!', '#34d399');
+            } else {
+                // 오답: 귀환하거나 미니언 없이 다이브해 버프 낭비
+                const px = currentOutcomeType === 'waste_baron' ? lerp(w * 0.30, w * 0.10, t) : lerp(w * 0.30, w * 0.82, t);
+                drawUnit(px, h * 0.50, '나 (버프 낭비)', 'player', { dead: currentOutcomeType === 'tower_dive_fail' && t > 0.7 });
+                drawBannerText(w, h, '실패! 바론 미니언 공성 이점을 살리지 못했습니다!', '#fb7185');
+            }
+        }
+
+        // 상황 8: 교전 승리 후 귀환 정비 & 드래곤
+        function renderScenario8(w, h, t) {
+            drawMapTerrain(w, h, 'reset_dragon');
+
+            if (animMode === 'scenario') {
+                // 체력 25% 상태인 아군 4명 미드 중앙에 위치
+                drawUnit(w * 0.48, h * 0.45, '나 (HP 25%)', 'player', { hp: 0.25 });
+                drawUnit(w * 0.44, h * 0.38, '아군1 (HP 20%)', 'ally', { hp: 0.20 });
+                drawUnit(w * 0.52, h * 0.52, '아군2 (HP 28%)', 'ally', { hp: 0.28 });
+                drawBannerText(w, h, '체력 30% 미만 & 1,600G 보유! 드래곤 30초 전 판단은?', '#38bdf8');
+            } else if (currentOutcomeType === 'reset_and_win') {
+                // 정답: 우물 귀환 후 풀피·새 아이템으로 드래곤 합류
+                let px, py, hpVal;
+                if (t < 0.45) {
+                    px = lerp(w * 0.48, w * 0.08, t / 0.45);
+                    py = lerp(h * 0.45, h * 0.78, t / 0.45);
+                    hpVal = 0.25;
+                } else {
+                    px = lerp(w * 0.08, w * 0.62, (t - 0.45) / 0.55);
+                    py = lerp(h * 0.78, h * 0.70, (t - 0.45) / 0.55);
+                    hpVal = 1.0;
+                }
+                drawUnit(px, py, hpVal === 1 ? '나 (풀피+코어템)' : '나 (귀환 정비)', 'player', { hp: hpVal, shield: hpVal === 1 });
+                drawUnit(w * 0.58, h * 0.62, '아군 (정비 완료)', 'ally', { hp: 1.0 });
+                drawUnit(w * 0.82, h * 0.65, '적군', 'enemy');
+                drawBannerText(w, h, '성공! 귀환 정비로 체력과 아이템을 채워 드래곤 한타를 완승했습니다!', '#34d399');
+            } else {
+                // 오답: 딸피로 버티다가 부활한 적에게 전멸
+                drawUnit(w * 0.64, h * 0.68, '나 (HP 25%)', 'player', { hp: 0.25, dead: t > 0.65 });
+                drawUnit(w * 0.60, h * 0.60, '아군 (딸피)', 'ally', { hp: 0.20, dead: t > 0.65 });
+                drawUnit(lerp(w * 0.88, w * 0.66, t), lerp(h * 0.35, h * 0.66, t), '풀피 적군 진입', 'enemy');
+                drawBannerText(w, h, '실패! 정비 없이 딸피로 버티다 부활한 적군에게 전멸당했습니다!', '#fb7185');
+            }
+        }
+
+        function startAnimationLoop(mode = 'scenario', outcomeType = null) {
+            animMode = mode;
+            currentOutcomeType = outcomeType;
+            animStartTime = 0;
+
+            const statusText = document.getElementById('sim-status-text');
+            const statusPill = document.getElementById('sim-status-pill');
+
+            if (mode === 'scenario') {
+                statusText.textContent = '전장 상황 재생 중 (루프)';
+                statusPill.className = 'px-3 py-1 rounded-full bg-hextech-dark/90 border border-hextech-blue/60 text-hextech-blue text-xs font-bold flex items-center gap-1.5 shadow';
+            } else {
+                statusText.textContent = '선택 결과 시뮬레이션 재생 중';
+                statusPill.className = 'px-3 py-1 rounded-full bg-hextech-dark/90 border border-hextech-gold/80 text-hextech-gold text-xs font-bold flex items-center gap-1.5 shadow';
+            }
+
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            resizeCanvas();
+            animFrameId = requestAnimationFrame(renderFrame);
+        }
+
+        function replayAnimation() {
+            playSfx('replay');
+            startAnimationLoop('scenario', null);
+        }
+
+        function replayOutcome() {
+            if (!currentOutcomeType) return;
+            playSfx('replay');
+            startAnimationLoop('outcome', currentOutcomeType);
+        }
+
+        // ==========================================
+        // 5. 퀴즈 진행 및 결과 판정 로직
+        // ==========================================
+        let currentIdx = 0;
+        let totalScore = 0;
+        let correctCount = 0;
+        let hasAnswered = false;
+        let missedNotes = [];
+        let currentShuffledOptions = []; // 현재 문제의 셔플된 선택지 목록 저장
+
+        // Fisher-Yates 셔플 유틸리티
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        function startSimulator() {
+            currentIdx = 0;
+            totalScore = 0;
+            correctCount = 0;
+            missedNotes = [];
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            renderScenario();
+        }
+
+        function renderScenario() {
+            hasAnswered = false;
+            const item = scenarios[currentIdx];
+
+            document.getElementById('question-counter').textContent = `상황 ${currentIdx + 1} / ${scenarios.length}`;
+            document.getElementById('category-badge').textContent = item.category;
+            document.getElementById('score-counter').textContent = `현재 점수: ${Math.round(totalScore)}점`;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / scenarios.length) * 100}%`;
+            document.getElementById('role-tag').textContent = `포지션: ${item.role}`;
+            document.getElementById('scenario-desc').textContent = item.desc;
+            document.getElementById('question-prompt').textContent = item.question;
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.add('hidden');
+
+            const optionsList = document.getElementById('options-list');
+            optionsList.innerHTML = '';
+
+            // 원본 선택지에 고유 originalId('A','B','C','D') 부여 후 매번 랜덤하게 셔플
+            const indexedOptions = item.options.map((opt, idx) => ({
+                ...opt,
+                originalId: String.fromCharCode(65 + idx)
+            }));
+            currentShuffledOptions = shuffleArray(indexedOptions);
+
+            currentShuffledOptions.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl bg-hextech-dark border border-slate-700 hover:border-hextech-gold hover:bg-slate-900 transition-all duration-150 flex items-start gap-3 group";
+                btn.innerHTML = `
+                    <span class="shrink-0 w-7 h-7 rounded-lg bg-slate-800 border border-slate-600 group-hover:border-hextech-gold group-hover:text-hextech-gold flex items-center justify-center text-xs font-black text-slate-300 transition">
+                        ${String.fromCharCode(65 + idx)}
+                    </span>
+                    <span class="text-xs sm:text-sm text-slate-200 leading-snug pt-1">${opt.text}</span>
+                `;
+                btn.onclick = () => selectOption(idx);
+                optionsList.appendChild(btn);
+            });
+
+            document.getElementById('next-btn').textContent =
+                currentIdx === scenarios.length - 1 ? "최종 티어 결과 확인 →" : "다음 상황으로 →";
+
+            // 상황 애니메이션 시작
+            startAnimationLoop('scenario', null);
+        }
+
+        function selectOption(selectedIdx) {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            const item = scenarios[currentIdx];
+            const chosen = currentShuffledOptions[selectedIdx];
+            const buttons = document.getElementById('options-list').querySelectorAll('button');
+
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-hextech-gold', 'hover:bg-slate-900');
+                const opt = currentShuffledOptions[idx];
+
+                if (opt.isCorrect) {
+                    btn.classList.remove('bg-hextech-dark', 'border-slate-700');
+                    btn.classList.add('bg-emerald-950/75', 'border-emerald-500', 'ring-1', 'ring-emerald-500/50');
+                    btn.querySelector('span:first-child').classList.add('bg-emerald-600', 'text-white', 'border-emerald-400');
+                } else if (idx === selectedIdx && !opt.isCorrect) {
+                    btn.classList.remove('bg-hextech-dark', 'border-slate-700');
+                    btn.classList.add('bg-rose-950/75', 'border-rose-500', 'ring-1', 'ring-rose-500/50');
+                    btn.querySelector('span:first-child').classList.add('bg-rose-600', 'text-white', 'border-rose-400');
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackHeading = document.getElementById('feedback-heading');
+            const feedbackExplanation = document.getElementById('feedback-explanation');
+
+            const pointsPerQuestion = 100 / scenarios.length;
+
+            if (chosen.isCorrect) {
+                totalScore += pointsPerQuestion;
+                correctCount++;
+                playSfx('correct');
+                feedbackBox.className = "rounded-xl p-4 sm:p-5 border border-emerald-500/60 bg-emerald-950/40 transition-all duration-200 space-y-3";
+                feedbackIcon.textContent = "🏆";
+                feedbackHeading.textContent = "전술 판단 성공! 최선의 플레이입니다.";
+                feedbackHeading.className = "font-black text-base sm:text-lg text-emerald-400";
+            } else {
+                playSfx('wrong');
+                const rightOpt = item.options.find(o => o.isCorrect);
+                missedNotes.push({
+                    category: item.category,
+                    tip: rightOpt ? rightOpt.rationale : chosen.rationale
+                });
+                feedbackBox.className = "rounded-xl p-4 sm:p-5 border border-rose-500/60 bg-rose-950/40 transition-all duration-200 space-y-3";
+                feedbackIcon.textContent = "💀";
+                feedbackHeading.textContent = "전술 판단 실패! 위험한 선택입니다.";
+                feedbackHeading.className = "font-black text-base sm:text-lg text-rose-400";
+            }
+
+            document.getElementById('score-counter').textContent = `현재 점수: ${Math.round(totalScore)}점`;
+            feedbackExplanation.textContent = chosen.rationale;
+            feedbackBox.classList.remove('hidden');
+
+            // 선택한 결과 애니메이션 재생
+            startAnimationLoop('outcome', chosen.outcomeType);
+        }
+
+        function handleNextQuestion() {
+            currentIdx++;
+            if (currentIdx < scenarios.length) {
+                renderScenario();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            const finalPoints = Math.round(totalScore);
+            document.getElementById('final-score-text').textContent = `${finalPoints} / 100점`;
+            document.getElementById('correct-count-text').textContent = `총 ${scenarios.length}문제 중 ${correctCount}문제 정답`;
+
+            const tierBadge = document.getElementById('tier-badge');
+            const tierFeedback = document.getElementById('tier-feedback-text');
+
+            if (finalPoints >= 95) {
+                tierBadge.textContent = "CHALLENGER • 챌린저";
+                tierBadge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase border border-amber-400 bg-amber-500/20 text-amber-300";
+                tierFeedback.textContent = "완벽한 협곡 뇌지컬입니다! 교전 포지셔닝, 시야 장악, 스플릿 운영까지 모든 판단이 프로 수준에 가깝습니다.";
+            } else if (finalPoints >= 75) {
+                tierBadge.textContent = "DIAMOND • 다이아몬드";
+                tierBadge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase border border-sky-400 bg-sky-500/20 text-sky-300";
+                tierFeedback.textContent = "상위권 판단력을 갖추셨습니다! 대부분의 한타 구도와 운영 타이밍을 정확히 읽고 계시며, 세부적인 변수만 보완하면 마스터 이상도 충분합니다.";
+            } else if (finalPoints >= 50) {
+                tierBadge.textContent = "GOLD / PLATINUM • 골드~플래티넘";
+                tierBadge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase border border-emerald-400 bg-emerald-500/20 text-emerald-300";
+                tierFeedback.textContent = "기본적인 교전 감각은 좋지만, 유리할 때의 귀환 정비나 시야 없는 단독 행동에서 종종 역전을 허용할 수 있습니다.";
+            } else {
+                tierBadge.textContent = "IRON / BRONZE • 아이언~브론즈";
+                tierBadge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase border border-rose-400 bg-rose-500/20 text-rose-300";
+                tierFeedback.textContent = "무작정 싸움을 걸기보다 미니맵 시야 확보와 진형 유지 연습이 필요합니다. 아래 오답 노트의 핵심 포인트를 다시 확인해 보세요!";
+            }
+
+            const reviewContainer = document.getElementById('review-summary-container');
+            const missedList = document.getElementById('missed-list');
+            missedList.innerHTML = '';
+
+            if (missedNotes.length > 0) {
+                reviewContainer.classList.remove('hidden');
+                missedNotes.forEach(note => {
+                    const li = document.createElement('li');
+                    li.className = "p-2.5 rounded-lg bg-slate-900/90 border border-slate-800";
+                    li.innerHTML = `<strong class="text-hextech-gold">[${note.category}]</strong> ${note.tip}`;
+                    missedList.appendChild(li);
+                });
+            } else {
+                reviewContainer.classList.add('hidden');
+            }
+        }
+
+        function restartSimulator() {
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
